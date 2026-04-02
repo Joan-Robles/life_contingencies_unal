@@ -1,62 +1,34 @@
-premium_insurance <- function(
-    mortality_table,            # mandatory. Matrix
-    x,                          # mandatory: issue age
-    n,                          # mandatory: term in years
-    i,                          # mandatory: annual rate in decimal
+
+get_premium_insurance <- function(
+    mortality_table,            # mandatory: mortality matrix
+    x,                          # mandatory: issue age(s), integer vector
+    n,                          # mandatory: term in years, integer or Inf
+    i,                          # mandatory: annual effective rate in decimal
     m = 12,                     # number of fractions per year
-    frac_pay = TRUE,            # TRUE: pay at end of each fraction; FALSE: end of each year
-    frac_value = FALSE,         # TRUE: insured amount grows each fraction; FALSE: grows each year
+    frac_pay = TRUE,            # TRUE: payment at end of fraction; FALSE: end of year
+    frac_value = FALSE,         # TRUE: insured amount grows each fraction; FALSE: each year
     growth = "arithmetic",      # "arithmetic", "geometric", or "none"
     r = 0,                      # growth pace
-    initial_payment = "a",       # "a" or "b"
-    gender = "F"
+    initial_payment = "a",      # "a" or "b"
+    gender = "female"           # scalar or vector
 ) {
-  
-  ##########################################################################
-  # 0. GENERAL PURPOSE
-  ##########################################################################
-  # Template for pricing / premium calculation of a life insurance product.
-  #
-  # IMPORTANT:
-  # - This is only a skeleton.
-  # - Validation is included.
-  # - Core actuarial pricing logic is left as TODO sections.
-  # - A key missing design choice is SEX / mortality column selection:
-  #   your mortality table requires both q_men and q_women, but the inputs
-  #   currently do not include a "sex" argument. So, in the pricing block
-  #   below, you will need to decide how to choose the mortality column.
-  ##########################################################################
-  
   
   ##########################################################################
   # 1. CHECK MANDATORY INPUTS
   ##########################################################################
-  # In R, missing mandatory arguments are usually caught automatically.
-  # Still, explicit checks make error messages clearer.
-  ##########################################################################
-  if (missing(mortality_table)) {
-    stop("`mortality_table` is mandatory.")
-  }
-  if (missing(x)) {
-    stop("`x` is mandatory.")
-  }
-  if (missing(n)) {
-    stop("`n` is mandatory.")
-  }
-  if (missing(i)) {
-    stop("`i` is mandatory.")
-  }
+  if (missing(mortality_table)) stop("`mortality_table` is mandatory.")
+  if (missing(x)) stop("`x` is mandatory.")
+  if (missing(n)) stop("`n` is mandatory.")
+  if (missing(i)) stop("`i` is mandatory.")
   
   
   ##########################################################################
   # 2. VALIDATE MORTALITY TABLE
   ##########################################################################
-  # Expected:
-  # - data.frame or tibble-like object
-  # - must include at least columns:
-  #   age, q_men, q_women
-  ##########################################################################
-
+  if (!is.matrix(mortality_table)) {
+    stop("`mortality_table` must be a matrix.")
+  }
+  
   required_cols <- c("age", "q_men", "q_women")
   missing_cols <- setdiff(required_cols, colnames(mortality_table))
   
@@ -67,7 +39,7 @@ premium_insurance <- function(
     )
   }
   
-  # Basic type checks on mortality columns
+  # Basic column checks
   if (!is.numeric(mortality_table[, "age"])) {
     stop("Column `age` in `mortality_table` must be numeric/integer.")
   }
@@ -78,7 +50,7 @@ premium_insurance <- function(
     stop("Column `q_women` in `mortality_table` must be numeric.")
   }
   
-  # check mortality probabilities are in [0, 1]
+  # Mortality probabilities must be in [0, 1]
   if (any(mortality_table[, "q_men"] < 0 | mortality_table[, "q_men"] > 1, na.rm = TRUE)) {
     stop("Column `q_men` must contain probabilities in [0, 1].")
   }
@@ -88,23 +60,24 @@ premium_insurance <- function(
   
   
   ##########################################################################
-  # 3. VALIDATE SCALAR INPUTS
+  # 3. VALIDATE INPUTS
   ##########################################################################
-  # x: integer age
-  # n: integer duration in years
-  # i: numeric annual rate in decimal
-  # m: positive integer number of fractions per year
-  ##########################################################################
-  if (!is.numeric(x) || is.na(x) || x %% 1 != 0) {
-    stop("`x` must be a vector of integer values")
+  
+  # x can now be a vector of integer ages
+  if (!is.numeric(x) || any(is.na(x)) || any(x %% 1 != 0)) {
+    stop("`x` must be a vector of integer ages.")
   }
   
-  if (!is.numeric(n) || length(n) != 1 || is.na(n) || n %% 1 != 0 || n <= 0) {
-    stop("`n` must be one positive integer value.")
+  # n can be positive integer or Inf
+  if (!is.numeric(n) || length(n) != 1 || is.na(n)) {
+    stop("`n` must be one positive integer or `Inf`.")
+  }
+  if (!(is.infinite(n) || (n %% 1 == 0 && n > 0))) {
+    stop("`n` must be one positive integer or `Inf`.")
   }
   
   if (!is.numeric(i) || length(i) != 1 || is.na(i)) {
-    stop("`i` must be one numeric value (annual rate in decimal).")
+    stop("`i` must be one numeric value (annual effective rate in decimal).")
   }
   
   if (!is.numeric(m) || length(m) != 1 || is.na(m) || m %% 1 != 0 || m <= 0) {
@@ -120,13 +93,12 @@ premium_insurance <- function(
   }
   
   if (!is.character(growth) || length(growth) != 1) {
-    stop("`growth` must be one character value: 'arithmetic', 'geometric', or 'none'.")
+    stop("`growth` must be one of 'arithmetic', 'geometric', or 'none'.")
   }
   
   growth <- tolower(growth)
-  allowed_growth <- c("arithmetic", "geometric", "none")
-  if (!(growth %in% allowed_growth)) {
-    stop("`growth` must be one of: ", paste(allowed_growth, collapse = ", "))
+  if (!(growth %in% c("arithmetic", "geometric", "none"))) {
+    stop("`growth` must be one of 'arithmetic', 'geometric', or 'none'.")
   }
   
   if (!is.numeric(r) || length(r) != 1 || is.na(r)) {
@@ -136,113 +108,99 @@ premium_insurance <- function(
   if (!is.character(initial_payment) || length(initial_payment) != 1) {
     stop("`initial_payment` must be 'a' or 'b'.")
   }
-  
   initial_payment <- tolower(initial_payment)
   if (!(initial_payment %in% c("a", "b"))) {
     stop("`initial_payment` must be either 'a' or 'b'.")
   }
   
+  # gender can be scalar or same length as x
+  if (!is.character(gender)) {
+    stop("`gender` must be a character vector.")
+  }
+  if (!(length(gender) %in% c(1, length(x)))) {
+    stop("`gender` must have length 1 or the same length as `x`.")
+  }
+  if (length(gender) == 1) {
+    gender <- rep(gender, length(x))
+  }
+  
   
   ##########################################################################
-  # 4. PRODUCT CONSISTENCY WARNINGS
-  ##########################################################################
-  # User requested:
-  # Put an alert if frac_value = TRUE and frac_pay = FALSE
-  # because that is a weird product.
+  # 4. PRODUCT WARNING
   ##########################################################################
   if (isTRUE(frac_value) && isFALSE(frac_pay)) {
     warning(
       "You set `frac_value = TRUE` and `frac_pay = FALSE`. ",
-      "This means the insured amount grows within the year, ",
-      "but payments / valuation are only yearly. Weird product; check if intended."
+      "This is an unusual product: the insured value grows within the year, ",
+      "but payment is only at year-end."
     )
   }
   
   
   ##########################################################################
-  # 5. CHECK THAT AGES NEEDED EXIST IN THE TABLE
+  # 5. AGE SUPPORT + CHOPPING OF n
   ##########################################################################
   # Assumption:
-  # At the terminal age max(mortality_table[, "age"]), death is certain.
-  # Therefore, insurance terms extending beyond that age are allowed.
-  # Extending the term further does not change the value after the terminal age.
+  # - The table goes up to a terminal age.
+  # - Beyond that age, pricing does not change anymore because death
+  #   probabilities are zero-padded in the matrix.
+  #
+  # Requested rule:
+  # - If n > max_age or n = Inf, chop it to max_age.
   ##########################################################################
-  # Terminal age in the mortality table
-  terminal_age <- max(mortality_table[, "age"])
+  age_vec <- mortality_table[, "age"]
+  min_age <- min(age_vec)
+  terminal_age <- max(age_vec)
   
-  # Only require ages from issue age up to the terminal age
+  if (any(x < min_age)) {
+    stop("Some values in `x` are below the minimum age in the mortality table.")
+  }
+  if (any(x > terminal_age)) {
+    stop("Some values in `x` are above the terminal age in the mortality table.")
+  }
+  
+  # Only require mortality data from min(x) to terminal_age
   needed_ages <- min(x):terminal_age
-  
-  missing_ages <- setdiff(needed_ages, mortality_table[, "age"])
+  missing_ages <- setdiff(needed_ages, age_vec)
   
   if (length(missing_ages) > 0) {
     stop(
-      "The mortality table does not contain all required ages from issue age to terminal age. ",
+      "The mortality table does not contain all required ages from min(x) to terminal age. ",
       "Missing ages: ", paste(missing_ages, collapse = ", ")
     )
   }
   
+  # Computational horizon:
+  # if n is too large (or infinite), chop to terminal_age
+  n_eff <- if (is.infinite(n)) terminal_age else min(as.integer(n), terminal_age)
+  
+  
   ##########################################################################
   # 6. DISCOUNT SETUP
   ##########################################################################
-  # 30/360 convention:
-  # - 1 month = 1/12 year
-  # - more generally, each fraction = 1/m year
-  #
-  # These objects are useful later for fractional timing.
-  ##########################################################################
-  dt <- 1 / m                    # fraction of year
-  times_frac <- seq(dt, n, by = dt)   # end of each fraction
-  times_year <- seq(1, n, by = 1)     # end of each year
+  dt <- 1 / m
   
-  # Example discount factors:
-  # If you keep i as effective annual:
-  # v(t) = (1 + i)^(-t)
+  # Build both time grids using the chopped horizon
+  times_frac <- seq(dt, n_eff, by = dt)
+  times_year <- seq(1, n_eff, by = 1)
   
-  # Placeholder vectors:
+  # Effective annual discounting
   df_frac <- (1 + i)^(-times_frac)
   df_year <- (1 + i)^(-times_year)
   
   
   ##########################################################################
-  # 7. PAYMENT / BENEFIT GROWTH PATTERN
-  ##########################################################################
-  # This block defines the insured amount pattern, not the final premium yet.
-  #
-  # INTERPRETATION REQUESTED:
-  #
-  # Arithmetic:
-  #   initial_payment = "a":
-  #     1, 1 + 1/m, 1 + 2/m, ...
-  #
-  #   initial_payment = "b":
-  #     1 + 1/m, 1 + 2/m, 1 + 3/m, ...
-  #
-  # Geometric (natural analogous interpretation):
-  #   initial_payment = "a":
-  #     1, (1 + r)^(1/m), (1 + r)^(2/m), ...
-  #
-  #   initial_payment = "b":
-  #     (1 + r)^(1/m), (1 + r)^(2/m), (1 + r)^(3/m), ...
-  #
-  # None:
-  #   always 1
-  #
-  # NOTE:
-  # - You may later want to decide whether "r" is annual growth rate
-  #   or per-step growth rate. The formulas below interpret r as an
-  #   ANNUAL geometric growth rate.
+  # 7. INSURED AMOUNT / BENEFIT GROWTH PATTERN
   ##########################################################################
   
-  # Time index for fractional pattern:
+  # Fractional indices
   k_frac_a <- 0:(length(times_frac) - 1)
   k_frac_b <- 1:length(times_frac)
   
-  # Time index for annual pattern:
+  # Yearly indices
   k_year_a <- 0:(length(times_year) - 1)
   k_year_b <- 1:length(times_year)
   
-  # Initialize placeholders
   insured_amount_frac <- NULL
   insured_amount_year <- NULL
   
@@ -273,92 +231,151 @@ premium_insurance <- function(
   
   
   ##########################################################################
-  # 8. SELECT THE RELEVANT BENEFIT SCHEDULE
+  # 8. SELECT BENEFIT SCHEDULE USED IN PRICING
   ##########################################################################
-  # If frac_value = TRUE, benefit schedule changes each fraction.
-  # If frac_value = FALSE, benefit schedule changes yearly.
+  # Four cases:
+  # 1. frac_pay = TRUE,  frac_value = TRUE
+  #    -> fractional payment times and fractional benefit growth
   #
-  # IMPORTANT:
-  # Even if the benefit changes yearly, you may still evaluate payments or
-  # death timing fractionally. That alignment is part of the pricing logic
-  # to be defined later.
+  # 2. frac_pay = TRUE,  frac_value = FALSE
+  #    -> fractional payment times, but benefit only changes yearly
+  #       so we repeat each yearly amount m times
+  #
+  # 3. frac_pay = FALSE, frac_value = TRUE
+  #    -> weird product, but if user insists, we take the end-of-year
+  #       value from the fractional schedule
+  #
+  # 4. frac_pay = FALSE, frac_value = FALSE
+  #    -> standard yearly pricing
   ##########################################################################
-  benefit_schedule <- if (isTRUE(frac_value)) insured_amount_frac else insured_amount_year
+  if (isTRUE(frac_pay) && isTRUE(frac_value)) {
+    benefit_schedule <- insured_amount_frac
+    discount_factors <- df_frac
+    
+  } else if (isTRUE(frac_pay) && isFALSE(frac_value)) {
+    benefit_schedule <- rep(insured_amount_year, each = m)
+    discount_factors <- df_frac
+    
+  } else if (isFALSE(frac_pay) && isTRUE(frac_value)) {
+    benefit_schedule <- insured_amount_frac[seq(m, length(insured_amount_frac), by = m)]
+    discount_factors <- df_year
+    
+  } else {
+    benefit_schedule <- insured_amount_year
+    discount_factors <- df_year
+  }
   
   
   ##########################################################################
-  # 9. MORTALITY EXTRACTION PLACEHOLDER
+  # 9. PROBABILITY OF DEATH MATRIX
   ##########################################################################
-  # TODO:
-  # Decide how to choose between q_men and q_women.
+  # Annual death probabilities:
+  # - one column per insured age in x
+  # - one row per policy year, up to n_eff
+  # - if a life reaches terminal age earlier than n_eff, fill the remaining
+  #   rows with zeros so all columns have equal length
   #
-  # Since no `sex` input is present yet, here are some possibilities:
-  # - add a new argument `sex = c("men", "women")`
-  # - pass the desired q-column directly as an argument
-  # - create separate functions for men and women
-  #
-  # For now, we only leave a placeholder.
-  ##########################################################################
-  
-  # Example placeholder:
-  # qx <- mortality_table$q_men[mortality_table$age %in% x:(x + n)]
-  #
-  # Better future design:
-  # sex <- match.arg(sex)
-  # q_col <- if (sex == "men") "q_men" else "q_women"
-  # qx <- mortality_table[[q_col]][match(x:(x + n), mortality_table$age)]
-  
-  
-  ##########################################################################
-  # 10. PRICING LOGIC PLACEHOLDER
-  ##########################################################################
-  # TODO:
-  # Here you will build the actuarial present value / premium formula.
-  #
-  # Typical steps:
-  # 1. Build survival / death probabilities from the selected qx.
-  # 2. Decide whether deaths / claims are recognized yearly or fractionally.
-  # 3. Match benefit timing with payment timing:
-  #    - frac_pay = TRUE  -> benefit/premium cash flows on fractional grid
-  #    - frac_pay = FALSE -> benefit/premium cash flows on yearly grid
-  # 4. Apply discount factors.
-  # 5. Sum expected present values.
-  # 6. Return net premium (or gross premium later if expenses are added).
-  #
-  # This template returns a structured object for debugging and extension.
+  # Fractional case:
+  # - assume deaths are uniformly distributed within each year
+  # - split each annual death probability equally into m pieces
   ##########################################################################
   
-  premium_value <- NA_real_
+  # Annual death probability matrix: n_eff x length(x)
+  prob_death_year <- matrix(
+    0,
+    nrow = n_eff,
+    ncol = length(x)
+  )
+  
+  for (j in seq_along(x)) {
+    
+    # Annual death probabilities from age x[j] onward
+    dp_j <- death_probs_from_x(
+      mortality_table = mortality_table,
+      gender = gender[j],
+      x = x[j]
+    )
+    
+    # Keep only as many rows as the global horizon allows
+    take_j <- min(length(dp_j), n_eff)
+    prob_death_year[1:take_j, j] <- dp_j[1:take_j]
+    
+    # Remaining rows stay at zero by construction
+  }
+  
+  # Assign names
+  colnames(prob_death_year) <- paste0("x_", x)
+  rownames(prob_death_year) <- paste0("year_", seq_len(n_eff))
+  
+  # If payment is fractional, split each annual probability uniformly
+  if (isTRUE(frac_pay)) {
+    prob_death <- prob_death_year[rep(seq_len(n_eff), each = m), , drop = FALSE] / m
+    rownames(prob_death) <- paste0("frac_", seq_len(nrow(prob_death)))
+  } else {
+    prob_death <- prob_death_year
+  }
+  
+  
+  ##########################################################################
+  # 10. PRICING
+  ##########################################################################
+  # Pure premium / EPV of death benefit:
+  #
+  # premium = sum_t [ v_t * benefit_t * Pr(death at t) ]
+  #
+  # Since x can be a vector:
+  # - prob_death is a matrix
+  # - discount_factors and benefit_schedule are vectors
+  # - we build a cash-flow weight vector and multiply it columnwise
+  ##########################################################################
+  
+  # One pricing weight per row/time
+  pricing_weights <- discount_factors * benefit_schedule
+  
+  # Columnwise premium values, one for each insured age
+  premium_value <- colSums(prob_death * pricing_weights)
+  
+  # Nice names
+  names(premium_value) <- paste0("x_", x)
+  
+  # If x has length 1, return a scalar instead of a named vector
+  if (length(premium_value) == 1) {
+    premium_value <- as.numeric(premium_value)
+  }
   
   
   ##########################################################################
   # 11. RETURN
-  ##########################################################################
-  # Return a list for now, since this is a template. That makes debugging
-  # easier while you build the actuarial core.
   ##########################################################################
   return(list(
     premium = premium_value,
     inputs = list(
       x = x,
       n = n,
+      n_eff = n_eff,
       i = i,
       m = m,
       frac_pay = frac_pay,
       frac_value = frac_value,
       growth = growth,
       r = r,
-      initial_payment = initial_payment
+      initial_payment = initial_payment,
+      gender = gender
     ),
-    grids = list(
-      dt = dt,
-      times_frac = times_frac,
-      times_year = times_year
-    ),
-    discount = list(
-      df_frac = df_frac,
-      df_year = df_year
-    ),
-    benefit_schedule = benefit_schedule
+    discount_factors = discount_factors,
+    benefit_schedule = benefit_schedule,
+    prob_death_year = prob_death_year,
+    prob_death = prob_death
   ))
 }
+
+# A <- get_premium_insurance(mortality_table = mortality_table,
+#                           x = 37,
+#                           n = Inf, 
+#                           i = .1, 
+#                           r = .05,
+#                           frac_pay = TRUE,
+#                           frac_value = FALSE,
+#                           initial_payment = "a")
+# 
+# A$premium 

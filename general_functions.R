@@ -113,3 +113,47 @@ get_discount_factors <- function(rate, time, type = "effective") {
   
   return(df)
 }
+
+
+death_probs_from_x <- function(mortality_table, gender, x) {
+  
+  # Extract ages
+  age_vec <- mortality_table[, "age"]
+  
+  # Select mortality column by gender
+  gender <- tolower(gender)
+  if (gender %in% c("male", "hombre", "men")) {
+    qx_full <- mortality_table[, "q_men"]
+  } else if (gender %in% c("female", "mujer", "women")) {
+    qx_full <- mortality_table[, "q_women"]
+  } else {
+    stop("`gender` must be male/hombre/men or female/mujer/women.")
+  }
+  
+  # Terminal age in the table
+  terminal_age <- max(age_vec)
+  
+  # Ages needed from current age x to terminal age
+  needed_ages <- x:terminal_age
+  idx <- match(needed_ages, age_vec)
+  
+  if (any(is.na(idx))) {
+    stop("Missing ages between x and terminal age.")
+  }
+  
+  # Mortality vector from age x onward
+  qx <- qx_full[idx]
+  
+  # Survival probabilities p_x = 1 - q_x
+  px <- 1 - qx
+  
+  # k-year survival probabilities: _k p_x for k = 0,1,2,...
+  surv_probs <- c(1, cumprod(px[-length(px)]))
+  
+  # Probability of dying in each year:
+  # q_x, p_x q_{x+1}, p_x p_{x+1} q_{x+2}, ...
+  death_probs <- surv_probs * qx
+  
+  return(death_probs)
+}
+

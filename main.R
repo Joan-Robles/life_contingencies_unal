@@ -33,6 +33,7 @@ pacman::p_load(
 n_sim <- 1000
 file_path <- file.path(getwd(), "res-1555-2010.pdf") # mortality table path
 
+
 # Read and process mortality table ---------------------------------------------------
 
 .mortality_file <- pdf_text(file_path)[2]
