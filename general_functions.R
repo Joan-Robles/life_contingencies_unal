@@ -70,8 +70,22 @@ process_mortality_table <- function(text_content, interest, save_copy = TRUE) {
     mortality_table$Mx_women[nrow(mortality_table)+1-i] <- sum_women
   }
   
+  mortality_table$Rx_men <- NA
+  mortality_table$Rx_women <- NA
+  sum_men = 0
+  sum_women = 0
+  for (i in 1:nrow(mortality_table)) {
+    sum_men <- sum_men + mortality_table$Mx_men[nrow(mortality_table)+1-i]
+    sum_women <- sum_women + mortality_table$Mx_women[nrow(mortality_table)+1-i]
+    mortality_table$Rx_men[nrow(mortality_table)+1-i] <- sum_men
+    mortality_table$Rx_women[nrow(mortality_table)+1-i] <- sum_women
+  }
+  
   mortality_table$Ax_men <- mortality_table$Mx_men/mortality_table$Dx_men
   mortality_table$Ax_women <- mortality_table$Mx_women/mortality_table$Dx_women
+  
+  mortality_table$IAx_men <- mortality_table$Rx_men/mortality_table$Dx_men
+  mortality_table$IAx_women <- mortality_table$Rx_women/mortality_table$Dx_women
   
   mortality_matrix <- as.matrix(mortality_table)
   
@@ -112,4 +126,21 @@ get_discount_factors <- function(rate, time, type = "effective") {
   }
   
   return(df)
+}
+
+
+Ax1n <- function(age, n, mortality_matrix, gender = "M") {
+  
+  # A: I feel more confortable with dataframes
+  mortality_table <- as.data.frame(mortality_matrix)
+  
+  if (gender == "M") {
+    result <- mortality_table$Mx_women[age] - mortality_table$Mx_women[age + n]
+    result <- result/mortality_table$Dx_women[age]
+  } else {
+    result <- mortality_table$Mx_men[age] - mortality_table$Mx_men[age + n]
+    result <- result/mortality_table$Dx_men[age]
+  }
+  
+  return(result)
 }
