@@ -8,7 +8,7 @@ set.seed(123) # Seed
 
 source("general_graphs.R") 
 source("general_functions.R")
-
+source("specific_functions.R")
 
 # Packages ----------------------------------------------------------------
 
@@ -38,7 +38,84 @@ inflation <- 0.052
 # Read and process mortality table ---------------------------------------------------
 
 .mortality_file <- pdf_text(file_path)[2]
-mortality_table <- process_mortality_table(.mortality_file, 0.1) # file
 
-# process functions
-tst1 <- Problem1(34, 12, 0.05, .mortality_file, "women", 0.1)
+
+# workshop --------------------------------------------------------------
+
+# ex 1
+A <- get_premium_insurance(mortality_file = .mortality_file,
+                           x = 34,
+                           n = Inf,
+                           i = 0.1,
+                           r = 0.05,
+                           frac_pay = TRUE,
+                           frac_value = FALSE,
+                           initial_payment = "a")
+
+tst1 <- price_case_11(34, 12, 0.05, .mortality_file, "women", 0.1)
+get_case_index(frac_pay = TRUE, frac_value = FALSE, growth = "arithmetic", r = 0.05, initial_payment = "a")
+
+A$premium; tst1
+
+
+# ex 2. 
+A <- get_premium_insurance(mortality_file = .mortality_file,
+                           x = 27,
+                           n = Inf,
+                           i = 0.1,
+                           r = 0.05,
+                           frac_pay = TRUE,
+                           frac_value = TRUE,
+                           initial_payment = "b")
+
+tst2 <- price_case_25(27, 12, 0.05, .mortality_file, "women", 0.1)
+get_case_index(frac_pay = TRUE, frac_value = TRUE, growth = "arithmetic", r = 0.05, initial_payment = "b")
+A$premium; tst2
+
+
+# ex 3. n pendiente
+A <- get_premium_insurance(mortality_file = .mortality_file, gender = "women",
+                           x = 25,
+                           n = 50,
+                           i = 0.1,
+                           r = 0.05,
+                           frac_pay = TRUE,
+                           frac_value = TRUE,
+                           initial_payment = "a")
+
+tst3 <- price_case_09(34, 12, 0.05, .mortality_file, "women", 0.1)
+get_case_index(frac_pay = TRUE, frac_value = TRUE, growth = "arithmetic", r = 0.05, initial_payment = "a")
+A$premium; tst3
+
+
+# ex 5
+A <- get_premium_insurance(mortality_file = .mortality_file,
+                           x = 26,
+                           n = Inf,
+                           i = 0.1,
+                           r = 0.05,
+                           frac_pay = TRUE,
+                           frac_value = FALSE,
+                           initial_payment = "a", growth = "geometric")
+
+tst5 <- price_case_15(26, 12, 0.05, .mortality_file, "women", 0.1)
+get_case_index(frac_pay = TRUE, frac_value = FALSE, growth = "geometric", r = 0.05, initial_payment = "a")
+A$premium; tst5
+
+
+
+
+
+get_premium_insurance(mortality_file = .mortality_file, gender = "men",
+                      x = 25,
+                      n = Inf,
+                      i = 0.1,
+                      r = 0,
+                      frac_pay = FALSE,
+                      frac_value = FALSE,
+                      initial_payment = "a")$premium
+
+
+# Nice plots --------------------------------------------------------------
+
+
