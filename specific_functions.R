@@ -15,13 +15,13 @@ Problem1 <- function(x,
                      .mortality_file,
                      gender = "women",
                      interest) {
-  browser()
+  
   mortality_table <- process_mortality_table(.mortality_file, interest)
   mortality_table <- as.data.frame(mortality_table)
-  browser()
+
   pos_in_table <- which(mortality_table[, "age"] == x)
   interest_m <- m * ((1 + interest)^(1 / m) - 1)
-  browser()
+  
   if (gender == "women") {
     result1 <- mortality_table$IAx_women[pos_in_table] - mortality_table$Ax_women[pos_in_table]
     result2 <- mortality_table$Ax_women[pos_in_table] + r * result1
@@ -68,4 +68,3 @@ Problem2 <- function(x,
 
 tst1 <- Problem1(34, 12, 0.05, .mortality_file, "women", 0.1)
 tst1
-plot(mortality_table$IAx_women)
