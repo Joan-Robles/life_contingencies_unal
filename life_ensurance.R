@@ -347,35 +347,26 @@ get_premium_insurance <- function(
   ##########################################################################
   # 11. RETURN
   ##########################################################################
-  return(list(
+  result <- (list(
     premium = premium_value,
-    inputs = list(
-      x = x,
-      n = n,
-      n_eff = n_eff,
-      i = i,
-      m = m,
-      frac_pay = frac_pay,
-      frac_value = frac_value,
-      growth = growth,
-      r = r,
-      initial_payment = initial_payment,
-      gender = gender
-    ),
     discount_factors = discount_factors,
     benefit_schedule = benefit_schedule,
     prob_death_year = prob_death_year,
     prob_death = prob_death
   ))
+  
+  result #return
 }
 
-# A <- get_premium_insurance(mortality_table = mortality_table,
-#                           x = 37,
-#                           n = Inf, 
-#                           i = .1, 
-#                           r = .05,
-#                           frac_pay = TRUE,
-#                           frac_value = FALSE,
-#                           initial_payment = "a")
-# 
-# A$premium 
+A <- get_premium_insurance(mortality_table = mortality_table,
+                          x = 34,
+                          n = Inf,
+                          i = 0.1,
+                          r = 0.05,
+                          frac_pay = TRUE,
+                          frac_value = TRUE,
+                          initial_payment = "a")
+
+A$premium
+
+# Update table cases
