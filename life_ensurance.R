@@ -281,7 +281,7 @@ premium_insurance <- function(
   # IMPORTANT:
   # Even if the benefit changes yearly, you may still evaluate payments or
   # death timing fractionally. That alignment is part of the pricing logic
-  # you will define later.
+  # to be defined later.
   ##########################################################################
   benefit_schedule <- if (isTRUE(frac_value)) insured_amount_frac else insured_amount_year
   
