@@ -178,7 +178,7 @@ get_premium_insurance <- function(
   
   # Computational horizon:
   # if n is too large (or infinite), chop to terminal_age
-  n_eff <- if (is.infinite(n)) terminal_age else min(as.integer(n), terminal_age)
+  n_eff <- min(n, terminal_age)
   
   
   ##########################################################################

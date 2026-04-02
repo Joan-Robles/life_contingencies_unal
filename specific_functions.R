@@ -71,7 +71,7 @@ price_case_09 <- function(x,
   
 }
 
-
+# Problem2 in workshop
 price_case_25 <- function(x,
                      m,
                      r,
@@ -128,6 +128,54 @@ Problem4 <- function(x,
   result1 <- Problem3(x, m, r, .mortality_file,
                       gender, interest)
   
+}
+
+
+price_case_15 <- function(x,
+                          m,
+                          r,
+                          .mortality_file,
+                          gender = "women",
+                          interest) {
+  
+  # Read / build mortality table
+  mortality_table <- process_mortality_table(.mortality_file, interest)
+  mortality_table <- as.data.frame(mortality_table)
+  
+  # Position of age x in table
+  pos_in_table <- which(mortality_table[, "age"] == x)
+  
+  if (length(pos_in_table) == 0) {
+    stop("Age x was not found in mortality_table.")
+  }
+  
+  # Equivalent nominal rate convertible m times per year
+  interest_m <- m * ((1 + interest)^(1 / m) - 1)
+  
+  # Select Ax and IAx by gender
+  if (gender %in% c("women", "mujer", "female")) {
+    
+    Ax  <- mortality_table$Ax_women[pos_in_table]
+    IAx <- mortality_table$IAx_women[pos_in_table]
+    
+  } else if (gender %in% c("men", "hombre", "male")) {
+    
+    Ax  <- mortality_table$Ax_men[pos_in_table]
+    IAx <- mortality_table$IAx_men[pos_in_table]
+    
+  } else {
+    stop("`gender` must be one of: women/mujer/female or men/hombre/male.")
+  }
+  
+  # Algebra:
+  # (1 - r) Ax + r IAx = Ax + r (IAx - Ax)
+  result_base <- Ax + r * (IAx - Ax)
+  
+  # Fractional-payment adjustment
+  result <- (interest / interest_m) * result_base
+  
+  # return
+  result
 }
 
 
