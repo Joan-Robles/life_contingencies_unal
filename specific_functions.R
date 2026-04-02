@@ -9,7 +9,7 @@ file_path <- file.path(getwd(), "res-1555-2010.pdf") # mortality table path
 
 ## START ##
 
-Problem1 <- function(x,
+price_case_11 <- function(x,
                      m,
                      r,
                      .mortality_file,
@@ -36,7 +36,7 @@ Problem1 <- function(x,
   result
 }
 
-Problem3 <- function(x,
+price_case_09 <- function(x,
                      m,
                      r,
                      .mortality_file,
@@ -68,8 +68,3 @@ Problem3 <- function(x,
   result <- result1 + result2
   return(result)
 }
-
-tst1 <- Problem1(34, 12, 0.05, .mortality_file, "women", 0.25)
-tst1
-tst2 <- Problem3(34, 12, 0.07, .mortality_file, "women", 0.15)
-tst2

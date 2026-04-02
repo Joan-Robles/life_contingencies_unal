@@ -25,7 +25,7 @@ get_case_table <- function() {
 
 
 # Return the index of a given case
-insurance_case_index <- function(
+get_case_index <- function(
     frac_pay = TRUE,
     frac_value = FALSE,
     growth,
@@ -66,7 +66,7 @@ insurance_case_index <- function(
   r_case <- if (r == 0) "zero" else "nonzero"
   
   # Get table and locate row
-  tbl <- insurance_case_table()
+  tbl <- get_case_table()
   
   idx <- tbl$index[
     tbl$frac_pay == frac_pay &

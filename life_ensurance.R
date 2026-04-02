@@ -1,6 +1,6 @@
 
 get_premium_insurance <- function(
-    mortality_table,            # mandatory: mortality matrix
+    mortality_file,            # mandatory: mortality file
     x,                          # mandatory: issue age(s), integer vector
     n,                          # mandatory: term in years, integer or Inf
     i,                          # mandatory: annual effective rate in decimal
@@ -12,6 +12,12 @@ get_premium_insurance <- function(
     initial_payment = "a",      # "a" or "b"
     gender = "female"           # scalar or vector
 ) {
+  
+  ##########################################################################
+  # 1. CHANGE FORMAT
+  ##########################################################################
+  
+  mortality_table <- process_mortality_table(.mortality_file, interest = i)
   
   ##########################################################################
   # 1. CHECK MANDATORY INPUTS
@@ -359,17 +365,125 @@ get_premium_insurance <- function(
 }
 
 
-
-A <- get_premium_insurance(mortality_table = mortality_table,
-                          x = 110,
-                          n = Inf,
-                          i = 0.15,
-                          r = 0.07,
-                          frac_pay = TRUE,
-                          frac_value = TRUE,
-                          initial_payment = "a")
-
-A$premium
-
 # Update table cases
 source("set_cases.R")
+
+
+get_premium_auto <- function(
+    solved_cases,
+    mortality_table,
+    x,
+    n = Inf,
+    i,
+    r,
+    frac_pay,
+    frac_value,
+    initial_payment,
+    growth = "arithmetic",
+    gender = "women",
+    m = 12,
+    run_both = FALSE,
+    tol = 1e-10
+) {
+  
+  ##########################################################################
+  # 1. Identify the case index from the input combination
+  ##########################################################################
+  case_idx <- get_case_index(
+    frac_pay = frac_pay,
+    frac_value = frac_value,
+    growth = growth,
+    r = r,
+    initial_payment = initial_payment
+  )
+  
+  ##########################################################################
+  # 2. Check against case table (just to validate the index exists)
+  ##########################################################################
+  case_table <- get_case_table()
+  
+  if (!(case_idx %in% case_table$index)) {
+    stop("The case index was not found in `get_case_table()`.")
+  }
+  
+  ##########################################################################
+  # 3. Decide whether a specific closed-form / solved function is available
+  ##########################################################################
+  is_solved <- case_idx %in% solved_cases
+  
+  # Build the expected specific-function name, e.g. price_case_09, price_case_11
+  specific_fun_name <- sprintf("price_case_%02d", case_idx)
+  
+  # Check the function actually exists in the environment
+  has_specific_fun <- exists(specific_fun_name, mode = "function")
+  
+  use_specific <- is_solved && has_specific_fun
+  
+  ##########################################################################
+  # 4. Generic result
+  ##########################################################################
+  generic_result <- get_premium_insurance(
+    mortality_table = mortality_table,
+    x = x,
+    n = n,
+    i = i,
+    r = r,
+    frac_pay = frac_pay,
+    frac_value = frac_value,
+    initial_payment = initial_payment,
+    growth = growth,
+    gender = gender,
+    m = m
+  )$premium
+  
+  ##########################################################################
+  # 5. If the case is not solved, always return the generic result
+  ##########################################################################
+  if (!use_specific) {
+    return(generic_result)
+  }
+  
+  ##########################################################################
+  # 6. Specific result
+  #
+  # Based on your example, specific functions are called like:
+  # price_case_11(x, m, r, mortality_table, gender, i)
+  #
+  # If later you standardize the specific functions, this block can be updated.
+  ##########################################################################
+  specific_fun <- get(specific_fun_name, mode = "function")
+  
+  specific_result <- specific_fun(
+    x,
+    m,
+    r,
+    mortality_table,
+    gender,
+    i
+  )
+  
+  ##########################################################################
+  # 7. If only one method should be used, return the specific result
+  ##########################################################################
+  if (!run_both) {
+    return(specific_result)
+  }
+  
+  ##########################################################################
+  # 8. If both methods are requested:
+  #    - return one result if they agree up to tol
+  #    - return both if they differ, with a warning
+  ##########################################################################
+  if (all(abs(specific_result - generic_result) < tol)) {
+    return(specific_result)
+  } else {
+    warning(
+      sprintf(
+        "Specific and generic premiums differ for case %02d (tolerance = %g).",
+        case_idx, tol
+      )
+    )
+    return(c(specific = specific_result, generic = generic_result))
+  }
+}
+
