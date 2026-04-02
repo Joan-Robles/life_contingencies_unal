@@ -24,11 +24,15 @@ process_mortality_table <- function(text_content, save_copy = TRUE) {
   # Combine numeric vectors into a matrix
   mortality_matrix <- do.call(rbind, numeric_lines)
   
+  # keep what matters
+  mortality_matrix <- mortality_matrix[, c(1, 4, 9)]
+  colnames(mortality_matrix) <- c("age", "q_men", "q_women")
+  
   # Try to save a copy as RDS if requested, without breaking the function
   if (isTRUE(save_copy)) {
     tryCatch(
       {
-        saveRDS(mortality_matrix, file = "mortality_matrix.rds")
+        saveRDS(mortality_matrix, file = "mortality_table.rds")
       },
       error = function(e) {
         message("Could not save RDS copy: ", e$message)
