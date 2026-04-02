@@ -36,8 +36,7 @@ file_path <- file.path(getwd(), "res-1555-2010.pdf") # mortality table path
 # Read and process mortality table ---------------------------------------------------
 
 .mortality_file <- pdf_text(file_path)[2]
-
-mortality_table <- process_mortality_table(.mortality_file) # file
+mortality_table <- process_mortality_table(.mortality_file, 0.1) # file
 
 # get complements
 p_men <- 1 - mortality_table[, "q_men"]
