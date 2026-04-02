@@ -40,3 +40,5 @@ inflation <- 0.052
 .mortality_file <- pdf_text(file_path)[2]
 mortality_table <- process_mortality_table(.mortality_file, 0.1) # file
 
+# process functions
+tst1 <- Problem1(34, 12, 0.05, .mortality_file, "women", 0.1)

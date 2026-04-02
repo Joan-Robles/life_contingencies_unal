@@ -187,7 +187,7 @@ get_premium_insurance <- function(
   # Effective annual discounting
   df_frac <- (1 + i)^(-times_frac)
   df_year <- (1 + i)^(-times_year)
-  
+
   
   ##########################################################################
   # 7. INSURED AMOUNT / BENEFIT GROWTH PATTERN
@@ -358,11 +358,13 @@ get_premium_insurance <- function(
   result #return
 }
 
+
+
 A <- get_premium_insurance(mortality_table = mortality_table,
-                          x = 34,
+                          x = 110,
                           n = Inf,
-                          i = 0.1,
-                          r = 0.05,
+                          i = 0.15,
+                          r = 0.07,
                           frac_pay = TRUE,
                           frac_value = TRUE,
                           initial_payment = "a")
@@ -370,3 +372,4 @@ A <- get_premium_insurance(mortality_table = mortality_table,
 A$premium
 
 # Update table cases
+source("set_cases.R")
