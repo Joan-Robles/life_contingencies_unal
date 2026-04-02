@@ -32,13 +32,11 @@ pacman::p_load(
 
 n_sim <- 1000
 file_path <- file.path(getwd(), "res-1555-2010.pdf") # mortality table path
-
+i <- 0.025
+inflation <- 0.052
 
 # Read and process mortality table ---------------------------------------------------
 
 .mortality_file <- pdf_text(file_path)[2]
 mortality_table <- process_mortality_table(.mortality_file, 0.1) # file
 
-# get complements
-p_men <- 1 - mortality_table[, "q_men"]
-p_women <- 1 - mortality_table[, "q_women"]
