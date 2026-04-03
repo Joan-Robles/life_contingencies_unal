@@ -149,11 +149,13 @@ Problem4 <- function(x,
   v <- 1/(1+interest)
   mult <- 1
   if (gender == "women"){
-    for (i in 0:x+n-1) {
+    # p_vector <- mortality_table$q_women[pos_in_table]
+    
+    for (i in 0:(n-1)) {
       mult <- mult * (1 - mortality_table$q_women[pos_in_table + i])
     }
   } else if (gender == "men") {
-    for (i in 0:x+n-1) {
+    for (i in 0:(n-1)) {
       mult <- mult * (1 - mortality_table$q_men[pos_in_table + i])
     }
   }
@@ -224,5 +226,5 @@ tst3
 tst4 <- price_case_09_term(25, 50, 12, 0.05, .mortality_file, "women", 0.1)
 tst4
 
-tst5 <- Problem4(25, 12, 0.05, 49, .mortality_file, "women", 0.1)
+tst5 <- Problem4(25, 12, 0.05, 50, .mortality_file, "women", 0.1)
 tst5
