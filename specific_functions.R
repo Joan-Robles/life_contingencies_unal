@@ -103,9 +103,9 @@ price_case_25 <- function(x,
 # NEW finite-term case:
 # frac_pay = TRUE, frac_value = TRUE, initial_payment = "a", arithmetic
 price_case_09_term <- function(x,
-                               n,
                                m,
                                r,
+                               n,
                                .mortality_file,
                                gender = "women",
                                interest) {
@@ -225,3 +225,4 @@ tst4 <- price_case_09_term(25, 50, 12, 0.05, .mortality_file, "women", 0.1)
 tst4
 
 tst5 <- Problem4(25, 12, 0.05, 49, .mortality_file, "women", 0.1)
+tst5
