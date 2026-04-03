@@ -133,6 +133,7 @@ price_case_09_term <- function(x,
 Problem4 <- function(x,
                      m,
                      r,
+                     n,
                      .mortality_file,
                      gender = "women",
                      interest) {
@@ -142,12 +143,35 @@ Problem4 <- function(x,
   
   pos_in_table <- which(mortality_table[, "age"] == x)
   interest_m <- m * ((1 + interest)^(1 / m) - 1)
-  result1 <- Problem3(x, m, r, .mortality_file,
-                      gender, interest)
+  
+  # Dotal
+  
+  v <- 1/(1+interest)
+  mult <- 1
+  if (gender == "women"){
+    for (i in 0:x+n-1) {
+      mult <- mult * (1 - mortality_table$q_women[pos_in_table + i])
+    }
+  } else if (gender == "men") {
+    for (i in 0:x+n-1) {
+      mult <- mult * (1 - mortality_table$q_men[pos_in_table + i])
+    }
+  }
+  Ax1n <- (v^n)*mult
+  
+  # Life
+  
+  Axn1 <- price_case_09_term(x, m, r, n, .mortality_file,
+                             gender, interest)
+  
+  
+  result <- Ax1n + Axn1
+  
+  result
   
 }
 
-
+# Problem 5
 price_case_15 <- function(x,
                           m,
                           r,
@@ -200,3 +224,4 @@ tst3
 tst4 <- price_case_09_term(25, 12, 0.05, 49, .mortality_file, "women", 0.1)
 tst4
 
+tst5 <- Problem4(25, 12, 0.05, 49, .mortality_file, "women", 0.1)
