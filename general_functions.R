@@ -187,3 +187,33 @@ Ax1n <- function(age, n, mortality_matrix, gender = "M") {
   
   return(result)
 }
+
+# Helper: compute A_{x:n} and IA_{x:n} directly from the mortality table
+term_Ax_IAx <- function(x,
+                        n,
+                        .mortality_file,
+                        gender = "women",
+                        interest) {
+  
+  mortality_table <- process_mortality_table(.mortality_file, interest)
+  mortality_table <- as.data.frame(mortality_table)
+  
+  # annual death probabilities from age x onward:
+  # q_x, p_x q_{x+1}, p_x p_{x+1} q_{x+2}, ...
+  death_probs <- death_probs_from_x(
+    mortality_table = as.matrix(mortality_table),
+    gender = gender,
+    x = x
+  )
+  
+  # chop n if needed
+  n_eff <- if (is.infinite(n)) length(death_probs) else min(n, length(death_probs))
+  
+  k <- seq_len(n_eff)
+  v <- 1 / (1 + interest)
+  
+  Ax_term  <- sum((v ^ k) * death_probs[1:n_eff])
+  IAx_term <- sum(k * (v ^ k) * death_probs[1:n_eff])
+  
+  c(Ax_term = Ax_term, IAx_term = IAx_term)
+}
