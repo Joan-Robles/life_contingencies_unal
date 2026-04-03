@@ -8,7 +8,8 @@ file_path <- file.path(getwd(), "res-1555-2010.pdf") # mortality table path
 .mortality_file <- pdf_text(file_path)[2]
 
 ## START ##
-# price_case_11
+
+# Problem 1
 price_case_11 <- function(x,
                      m,
                      r,
@@ -71,7 +72,8 @@ price_case_09 <- function(x,
   
 }
 
-# Problem2 in workshop
+
+# Problem 2 in workshop
 price_case_25 <- function(x,
                      m,
                      r,
@@ -98,20 +100,35 @@ price_case_25 <- function(x,
 }
 
 
-Problem3 <- function(x,
-                     m,
-                     r,
-                     n,
-                     .mortality_file,
-                     gender = "women",
-                     interest) {
+# NEW finite-term case:
+# frac_pay = TRUE, frac_value = TRUE, initial_payment = "a", arithmetic
+price_case_09_term <- function(x,
+                               n,
+                               m,
+                               r,
+                               .mortality_file,
+                               gender = "women",
+                               interest) {
   
-  mortality_table <- process_mortality_table(.mortality_file, interest)
-  mortality_table <- as.data.frame(mortality_table)
+  terms <- term_Ax_IAx(
+    x = x,
+    n = n,
+    .mortality_file = .mortality_file,
+    gender = gender,
+    interest = interest
+  )
   
-  pos_in_table <- which(mortality_table[, "age"] == x)
+  Ax_term  <- terms["Ax_term"]
+  IAx_term <- terms["IAx_term"]
+  
   interest_m <- m * ((1 + interest)^(1 / m) - 1)
+  
+  result <- (interest / interest_m) * ((1 - r) * Ax_term + r * IAx_term) +
+    r * ((interest - interest_m) / (interest_m^2)) * Ax_term
+  
+  result
 }
+
 
 Problem4 <- function(x,
                      m,
@@ -183,5 +200,8 @@ tst1 <- price_case_11(34, 12, 0.05, .mortality_file, "women", 0.25)
 tst1
 tst2 <- price_case_25(34, 12, 0.07, .mortality_file, "women", 0.15)
 tst2
-tst3 <- price_case_09(56, 2, 0.07, .mortality_file, "women", 0.17)
+tst3 <- price_case_09(25, 12, 0.05, .mortality_file, "women", 0.1)
 tst3
+tst4 <- price_case_09_term(25, 12, 0.05, 49, .mortality_file, "women", 0.1)
+tst4
+
