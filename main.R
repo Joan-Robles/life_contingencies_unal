@@ -79,9 +79,9 @@ A <- get_premium_insurance(
   mortality_file = .mortality_file,
   gender = "women",
   x = 25,
-  n = 50,
-  i = 0.1,
-  r = 0.05,
+  n = 30,
+  i = 0.07,
+  r = 0.04,
   frac_pay = TRUE,
   frac_value = TRUE,
   initial_payment = "a",
@@ -90,19 +90,18 @@ A <- get_premium_insurance(
 
 tst_3 <- price_case_09_term(
   x = 25,
-  n = 50,
+  n = 30,
   m = 12,
-  r = 0.05,
+  r = 0.04,
   .mortality_file = .mortality_file,
   gender = "women",
-  interest = 0.1
+  interest = 0.07
 )
 
 A$premium; tst_3
 
 
 # ex 5
-
 A <- get_premium_insurance(mortality_file = .mortality_file,
                            x = 26,
                            n = Inf,
