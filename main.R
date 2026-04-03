@@ -8,6 +8,7 @@ set.seed(123) # Seed
 
 source("general_graphs.R") 
 source("general_functions.R")
+source("life_ensurance.R")
 source("specific_functions.R")
 
 # Packages ----------------------------------------------------------------
@@ -74,21 +75,34 @@ A$premium; tst2
 
 
 # ex 3. n pendiente
-A <- get_premium_insurance(mortality_file = .mortality_file, gender = "women",
-                           x = 25,
-                           n = 50,
-                           i = 0.1,
-                           r = 0.05,
-                           frac_pay = TRUE,
-                           frac_value = TRUE,
-                           initial_payment = "a")
+A <- get_premium_insurance(
+  mortality_file = .mortality_file,
+  gender = "women",
+  x = 25,
+  n = 50,
+  i = 0.1,
+  r = 0.05,
+  frac_pay = TRUE,
+  frac_value = TRUE,
+  initial_payment = "a",
+  growth = "arithmetic"
+)
 
-tst3 <- price_case_09(34, 12, 0.05, .mortality_file, "women", 0.1)
-get_case_index(frac_pay = TRUE, frac_value = TRUE, growth = "arithmetic", r = 0.05, initial_payment = "a")
-A$premium; tst3
+tst_3 <- price_case_09_term(
+  x = 25,
+  n = 50,
+  m = 12,
+  r = 0.05,
+  .mortality_file = .mortality_file,
+  gender = "women",
+  interest = 0.1
+)
+
+A$premium; tst_3
 
 
 # ex 5
+
 A <- get_premium_insurance(mortality_file = .mortality_file,
                            x = 26,
                            n = Inf,
@@ -96,25 +110,18 @@ A <- get_premium_insurance(mortality_file = .mortality_file,
                            r = 0.05,
                            frac_pay = TRUE,
                            frac_value = FALSE,
-                           initial_payment = "a", growth = "geometric")
+                           initial_payment = "a",
+                           growth = "geometric")
 
 tst5 <- price_case_15(26, 12, 0.05, .mortality_file, "women", 0.1)
-get_case_index(frac_pay = TRUE, frac_value = FALSE, growth = "geometric", r = 0.05, initial_payment = "a")
+
+get_case_index(frac_pay = TRUE,
+               frac_value = FALSE,
+               growth = "geometric",
+               r = 0.05,
+               initial_payment = "a")
+
 A$premium; tst5
-
-
-
-
-
-get_premium_insurance(mortality_file = .mortality_file, gender = "men",
-                      x = 25,
-                      n = Inf,
-                      i = 0.1,
-                      r = 0,
-                      frac_pay = FALSE,
-                      frac_value = FALSE,
-                      initial_payment = "a")$premium
-
 
 # Nice plots --------------------------------------------------------------
 

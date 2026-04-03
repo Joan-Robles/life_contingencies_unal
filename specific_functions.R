@@ -155,8 +155,11 @@ price_case_15 <- function(x,
                           gender = "women",
                           interest) {
   
-  # Read / build mortality table
-  mortality_table <- process_mortality_table(.mortality_file, interest)
+  # Modified interest rate for the geometric-growth reduction
+  interest_star <- (interest - r) / (1 + r)
+  
+  # Build mortality table using the modified interest rate
+  mortality_table <- process_mortality_table(.mortality_file, interest_star)
   mortality_table <- as.data.frame(mortality_table)
   
   # Position of age x in table
@@ -166,30 +169,22 @@ price_case_15 <- function(x,
     stop("Age x was not found in mortality_table.")
   }
   
-  # Equivalent nominal rate convertible m times per year
+  # Equivalent nominal rate convertible m times per year, at the ORIGINAL rate
   interest_m <- m * ((1 + interest)^(1 / m) - 1)
   
-  # Select Ax and IAx by gender
+  # Select Ax at the modified rate
   if (gender %in% c("women", "mujer", "female")) {
-    
-    Ax  <- mortality_table$Ax_women[pos_in_table]
-    IAx <- mortality_table$IAx_women[pos_in_table]
+    Ax_star <- mortality_table$Ax_women[pos_in_table]
     
   } else if (gender %in% c("men", "hombre", "male")) {
-    
-    Ax  <- mortality_table$Ax_men[pos_in_table]
-    IAx <- mortality_table$IAx_men[pos_in_table]
+    Ax_star <- mortality_table$Ax_men[pos_in_table]
     
   } else {
     stop("`gender` must be one of: women/mujer/female or men/hombre/male.")
   }
   
-  # Algebra:
-  # (1 - r) Ax + r IAx = Ax + r (IAx - Ax)
-  result_base <- Ax + r * (IAx - Ax)
-  
-  # Fractional-payment adjustment
-  result <- (interest / interest_m) * result_base
+  # Final result
+  result <- (interest / interest_m) * (Ax_star / (1 + r))
   
   # return
   result
