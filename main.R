@@ -22,7 +22,6 @@ if (!requireNamespace("pacman", quietly = TRUE)) {
 pacman::p_load(
   readxl,
   dplyr,
-  forecast,
   parallel,
   pdftools,
   fanplot,
