@@ -6,7 +6,6 @@ set.seed(123) # Seed
 
 # Auxiliar functions --------------------------------------------------------
 
-source("general_graphs.R") 
 source("general_functions.R")
 source("life_ensurance.R")
 source("specific_functions.R")
@@ -34,6 +33,8 @@ n_sim <- 1000
 file_path <- file.path(getwd(), "res-1555-2010.pdf") # mortality table path
 i <- 0.025
 inflation <- 0.052
+x_values = 45:90
+n_values = 1:30
 
 # Read and process mortality table ---------------------------------------------------
 
@@ -124,3 +125,19 @@ A$premium; tst5
 # Nice plots --------------------------------------------------------------
 
 
+
+premium_table <- evaluate_premium_grid(
+  x_values = x_values,
+  n_values = n_values,
+  pricing_fun = get_premium_insurance,
+  mortality_file = .mortality_file,
+  i = 0.1,
+  r = 0.05,
+  frac_pay = TRUE,
+  frac_value = FALSE,
+  initial_payment = "a"
+)
+
+
+heatmap_xyz(x = premium_table$x, y = premium_table$y, z = premium_table$z,
+            xlab = "Edad", ylab = "Años asegurados")

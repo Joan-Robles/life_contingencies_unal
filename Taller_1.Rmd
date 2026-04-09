@@ -1,5 +1,5 @@
 ---
-title: "Taller 1 - Contingencias"
+title: "Taller 1 - Contingencias de vida"
 author: "Anna Salazar y Joan Robles"
 date: "2026-04-05"
 output: html_document
@@ -11,10 +11,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### Introducción
 
-En este documento se desarrollan las primas de distintos productos de seguros de vida, 
+En este documento se calculan las primas de distintos seguros de vida y se elaboran algunas comparaciones. 
+
+Se emplean dos enfoques para calcular las primas: primero, se resuelve cada problema de forma analítica y se programa **una función por producto**; segundo, se programa una función con suficientes parámetros para calcular la prima de cualquier producto. Esta función calcula los valores esperados de forma explícita: vectorizando los componentes (descuento, pago y probabilidad) y resolviendo la sumatoria. Se hiceron pruebas unitarias para determinar que el resultado por ambas vías es el mismo.   
+
 con base en la tabla colombiana de mortalidad 1998-2003 y una tasa de interés técnico.
 
-### Bases Técnicas
+### Bases y parámetros
 
 - Tabla: Colombiana de mortalidad de asegurados 1998-2003  
 - Interés técnico bruto:
@@ -144,7 +147,7 @@ process_mortality_table <- function(text_content, interest, save_copy = TRUE) {
 Prima de un seguro entero fraccionario con crecimiento del valor asegurado con patrón aritmético cada año, conforme al siguiente esquema: 
 
 ```{r, echo=FALSE, out.width="50%", fig.align="center"}
-knitr::include_graphics("Pr1.jpg")
+knitr::include_graphics("plots/Pr1.jpg")
 ```
 
 ```{r}
@@ -182,7 +185,7 @@ price_case_11 <- function(x,
 prima de un seguro entero fraccionario con crecimiento del valor asegurado con patrón aritmético dentro de cada año, conforme al siguiente esquema:
 
 ```{r, echo=FALSE, out.width="50%", fig.align="center"}
-knitr::include_graphics("pR2.jpg")
+knitr::include_graphics("plots/pR2.jpg")
 ```
 
 ```{r}
@@ -254,7 +257,7 @@ Prima de un seguro temporal fraccionario con crecimiento del valor asegurado con
 aritmético dentro de cada año, conforme al siguiente esquema: 
 
 ```{r, echo=FALSE, out.width="70%", fig.align="center"}
-knitr::include_graphics("Pr3.jpg")
+knitr::include_graphics("plots/Pr3.jpg")
 ```
 
 Para el seguro entregar adicionalmente el planteamiento del valor de la prima única y un desarrollo que la simplifique en términos de primas de $IA_{x:\overline{n}|}$ y $A_{x:\overline{n}|}$
@@ -345,7 +348,7 @@ Problem4 <- function(x,
 Prima de un seguro entero fraccionario con crecimiento del valor asegurado con patrón geométrico cada año, conforme al siguiente esquema:
 
 ```{r, echo=FALSE, out.width="50%", fig.align="center"}
-knitr::include_graphics("Pr5.jpg")
+knitr::include_graphics("plots/Pr5.jpg")
 ```
 
 ```{r}

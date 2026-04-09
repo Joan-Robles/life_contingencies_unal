@@ -1,4 +1,9 @@
 
+
+# Call the graphs
+source("general_graphs.R") 
+
+
 process_mortality_table <- function(text_content, interest, save_copy = TRUE) {
   # Split text into lines
   lines <- unlist(strsplit(text_content, "\n"))
@@ -216,4 +221,33 @@ term_Ax_IAx <- function(x,
   IAx_term <- sum(k * (v ^ k) * death_probs[1:n_eff])
   
   c(Ax_term = Ax_term, IAx_term = IAx_term)
+}
+
+# General template: evaluate any pricing function on a grid
+evaluate_premium_grid <- function(x_values,
+                                  n_values,
+                                  pricing_fun,
+                                  ...) {
+  
+  out <- do.call(
+    rbind,
+    lapply(n_values, function(b) {
+      res <- pricing_fun(x = x_values, n = b, ...)
+      
+      z <- if (is.list(res) && !is.null(res$premium)) {
+        as.numeric(res$premium)
+      } else {
+        as.numeric(res)
+      }
+      
+      data.frame(
+        x = x_values,
+        y = b,
+        z = z
+      )
+    })
+  )
+  
+  rownames(out) <- NULL
+  out
 }
