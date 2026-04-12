@@ -2,30 +2,34 @@
 title: "Taller 1 - Contingencias de vida"
 author: "Anna Salazar y Joan Robles"
 date: "Abril de 2026"
-output: html_document
+output:
+  html_document:
+    number_sections: true
+    toc: true
+    toc_depth: 2
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### Introducción {#intro}
+# Introducción {#intro}
 
 En este documento se calculan las primas de distintos seguros de vida y se elaboran algunas comparaciones. 
 
 Se emplean dos enfoques para calcular las primas: primero, se resuelve cada problema de forma analítica y se programa **una función por producto**; segundo, se programa una función con suficientes parámetros para calcular la prima de cualquier producto. Esta función calcula los valores esperados de forma explícita: vectorizando los componentes (descuento, pago y probabilidad) y resolviendo la sumatoria. Se hiceron pruebas unitarias para determinar que el resultado por ambas vías es el mismo. 
 
-Este documento constan de cinco secciones. Primero, esta introducción; segundo, una lista de datos y parámetros empleados; tercero, una sección sobre la lectura y procesamiento de datos; tercero ---lo central del taller--- el desarrollo algebráico de cada producto y la ejecución de las funciones específicas; cuarto, resultados general y comparaciones, y quinto, explicación de la organización del repositorio. 
+Este documento constan de cinco secciones. Primero, esta introducción; segundo, una lista de datos y parámetros empleados; tercero, una sección sobre la lectura y procesamiento de datos; cuarto ---lo central para el taller--- el desarrollo algebráico de cada producto y la ejecución de las funciones específicas; quinto, resultados general y comparaciones, y sexto, explicación de la organización del repositorio. 
 
 Este proyecto se realizó en R y está disponible en el siguiente repositorio de Github: <i class="fa fa-github"></i> [life_contingencies_unal](https://github.com/Joan-Robles/life_contingencies_unal)
 
-### Datos y parámetros {#data}
+# Datos y parámetros {#data}
 
 - Tabla colombiana de mortalidad de asegurados 1998-2003. Extraída de la   resolución 1555 DE 2010.
 - Tasa de crecimiento $r$ del valor asegurado de 5.1\%, correspondiente a la inflación. Se define así para mantener el poder adquisitivo del valor asegurado.
 - Tasa de interés técnica de 7.73\%, correspondiente a la composición de interés real e inflación. 
 
-```{r}
+```{r warning=FALSE}
 inflation <- 0.051
 real_interest <- 0.025
 # Ecuación de Fisher
@@ -34,7 +38,7 @@ print(round(nominal_interest * 100, 2))
 ```
 
 Otros parámetros y paquetes:
-```{r parametros}
+```{r parameters}
 # seed
 seed <- 123
 set.seed(seed)
@@ -44,38 +48,87 @@ source("general_functions.R")
 source("life_ensurance.R")
 source("specific_functions.R")
 
-# Other
-
+# for plotting
 file_path <- file.path(getwd(), "res-1555-2010.pdf")
 x_values <- 45:90
 n_values <- 1:30
 
-# Parámetros adicionales del taller
-m <- 12
+# baseline
+m <- 12 # like months
 gender <- "women"
-
+age <- 60
+base_n <- 30
 ```
 
 Se emplea el paquete `pacman` para cargar paquetes e instalar lo que falte:
-```{r packages}
-# Lectura de la tabla de mortalidad
-.mortality_file <- pdftools::pdf_text(file_path)[2]
-mortality_table <- process_mortality_table(.mortality_file, technical_interest) %>% 
-  as.data.frame(mortality_table)
+```{r packages, message=TRUE}
+# Install pacman if not available
+if (!requireNamespace("pacman", quietly = TRUE)) {
+  install.packages("pacman")
+}
+
+# Load (and install if needed) packages
+pacman::p_load(
+  dplyr,
+  parallel,
+  pdftools,
+  plotly,
+  ggplot2
+)
 ```
 
 
-### Procesamiento de la tabla de mortalidad {#process}
+# Procesamiento de la tabla de mortalidad {#process}
 
-La función que procesa la tabla de mortalidad **no se redefine aquí**; se toma directamente desde `general_functions.R`. A continuación solo se muestra una vista rápida del objeto procesado.
+La función process_mortality_table toma el texto bruto de la tabla de mortalidad y lo convierte en una tabla actuarial lista para valorar seguros. Primero identifica las filas numéricas del documento, limpia separadores, extrae los valores relevantes y conserva las columnas de edad y probabilidades anuales de muerte por sexo: $q_x^{(h)}$ y $q_x^{(m)}$.
+
+Luego construye una tabla de vida con radix inicial de 100000 para hombres y mujeres. Para cada edad calcula el número esperado de fallecimientos y sobrevivientes mediante:
+
+$$d_x = l_x q_x$$
+
+$$l_{x+1} = l_x - d_x$$
+
+Con la tasa de interés técnico $$i$$ define el factor de descuento:
+
+$$v = \frac{1}{1+i}$$
+
+A partir de allí agrega las funciones de conmutación necesarias para valorar seguros:
+
+$$D_x = l_x v^x$$
+
+$$C_x = D_x v q_x = d_x v^{x+1}$$
+
+Después calcula las sumas acumuladas:
+
+$$M_x = \sum_{k=x}^{\omega} C_k$$
+
+$$R_x = \sum_{k=x}^{\omega} M_k$$
+
+Estas magnitudes permiten obtener directamente primas únicas clásicas. En particular:
+
+$$A_x = \frac{M_x}{D_x}$$
+
+corresponde al seguro entero unitario, mientras que:
+
+$$(IA)_x = \frac{R_x}{D_x}$$
+
+corresponde al seguro entero con crecimiento aritmético del beneficio. Estas nuevas columnas se emplean en las funciones específicas definidas más adelante. 
 
 ```{r tabla_mortalidad}
+# read mortality table
+.mortality_file <- pdftools::pdf_text(file_path)[2]
+mortality_table <- process_mortality_table(.mortality_file, nominal_interest) %>% 
+  as.data.frame()
+
+# show
 head(mortality_table, 15)
 ```
 
 ---
-
-### Punto 1
+# Productos
+Antes de construir la función correspondiente a cada producto, 
+La función general es `get_premium_insurance()`, sus parámetros como `price_case_11()`.
+## Punto 1
 
 Prima de un seguro entero fraccionario con crecimiento del valor asegurado con patrón aritmético cada año.
 
@@ -90,29 +143,14 @@ P = \frac{i}{i^{(m)}}\left[(1-r)A_x + r(IA)_x\right]
 \]
 
 ```{r punto_1}
-x_1 <- 34
-
-premium_1_general <- get_premium_insurance(
-  mortality_file = .mortality_file,
-  x = x_1,
-  n = nominal_interestnf,
-  i = technical_interest,
-  m = m,
-  r = inflation,
-  frac_pay = TRUE,
-  frac_value = FALSE,
-  initial_payment = "a",
-  growth = "arithmetic",
-  gender = gender
-)
 
 premium_1_specific <- price_case_11(
-  x = x_1,
+  x = age,
   m = m,
   r = inflation,
   .mortality_file = .mortality_file,
   gender = gender,
-  interest = technical_interest
+  interest = nominal_interest
 )
 
 case_1_index <- get_case_index(
@@ -123,15 +161,9 @@ case_1_index <- get_case_index(
   initial_payment = "a"
 )
 
-data.frame(
-  caso = case_1_index,
-  prima_general = premium_1_general$premium,
-  prima_especifica = premium_1_specific,
-  diferencia = premium_1_general$premium - premium_1_specific
-)
 ```
 
-### Punto 2
+## Punto 2
 
 Prima de un seguro entero fraccionario con crecimiento del valor asegurado con patrón aritmético dentro de cada año.
 
@@ -142,29 +174,14 @@ knitr::include_graphics("plots/pR2.jpg")
 Para este punto se usa la función específica `price_case_25()` definida en `specific_functions.R`.
 
 ```{r punto_2}
-x_2 <- 27
-
-premium_2_general <- get_premium_insurance(
-  mortality_file = .mortality_file,
-  x = x_2,
-  n = nominal_interestnf,
-  i = technical_interest,
-  m = m,
-  r = inflation,
-  frac_pay = TRUE,
-  frac_value = TRUE,
-  initial_payment = "b",
-  growth = "arithmetic",
-  gender = gender
-)
 
 premium_2_specific <- price_case_25(
-  x = x_2,
+  x = age,
   m = m,
   r = inflation,
   .mortality_file = .mortality_file,
   gender = gender,
-  interest = technical_interest
+  interest = nominal_interest
 )
 
 case_2_index <- get_case_index(
@@ -175,15 +192,9 @@ case_2_index <- get_case_index(
   initial_payment = "b"
 )
 
-data.frame(
-  caso = case_2_index,
-  prima_general = premium_2_general$premium,
-  prima_especifica = premium_2_specific,
-  diferencia = premium_2_general$premium - premium_2_specific
-)
 ```
 
-### Punto 3
+## Punto 3
 
 Prima de un seguro temporal fraccionario con crecimiento del valor asegurado con patrón aritmético dentro de cada año.
 
@@ -201,64 +212,38 @@ P = \frac{i}{i^{(m)}}\left[(1-r)A_{x:\overline{n}|} + r(IA)_{x:\overline{n}|}\ri
 La función específica de este punto está definida en `specific_functions.R` como `price_case_09_term()`.
 
 ```{r punto_3}
-x_3 <- 25
-n_3 <- 50
-
-premium_3_general <- get_premium_insurance(
-  mortality_file = .mortality_file,
-  x = x_3,
-  n = n_3,
-  i = technical_interest,
-  m = m,
-  r = inflation,
-  frac_pay = TRUE,
-  frac_value = TRUE,
-  initial_payment = "a",
-  growth = "arithmetic",
-  gender = gender
-)
-
 premium_3_specific <- price_case_09_term(
-  x = x_3,
-  n = n_3,
+  x = age,
+  n = base_n,
   m = m,
   r = inflation,
   .mortality_file = .mortality_file,
   gender = gender,
-  interest = technical_interest
-)
-
-data.frame(
-  prima_general = premium_3_general$premium,
-  prima_especifica = premium_3_specific,
-  diferencia = premium_3_general$premium - premium_3_specific
+  interest = nominal_interest
 )
 ```
 
-### Punto 4
+## Punto 4
 
 Prima de un seguro dotal, obtenido al agregar un seguro dotal puro al anterior.
 
 La función disponible en el repositorio para este punto está definida en `specific_functions.R` con el nombre `Problem4()`.
 
 ```{r punto_4}
-x_4 <- 25
-n_4 <- 50
-
 premium_4 <- Problem4(
-  x = x_4,
+  x = age,
   m = m,
   r = inflation,
-  n = n_4,
+  n = base_n,
   .mortality_file = .mortality_file,
   gender = gender,
-  interest = technical_interest
+  interest = nominal_interest
 )
 
 premium_4
 ```
 
-### Punto 5
+## Punto 5
 
 Prima de un seguro entero fraccionario con crecimiento del valor asegurado con patrón geométrico cada año.
 
@@ -279,118 +264,134 @@ P = \frac{i}{i^{(m)}}\cdot\frac{1}{1+r}\,A_x(i^*)
 La función específica de este punto está definida en `specific_functions.R` como `price_case_15()`.
 
 ```{r punto_5}
-x_5 <- 26
 
-premium_5_general <- get_premium_insurance(
-  mortality_file = .mortality_file,
-  x = x_5,
-  n = nominal_interestnf,
-  i = technical_interest,
-  m = m,
-  r = inflation,
-  frac_pay = TRUE,
-  frac_value = FALSE,
-  initial_payment = "a",
-  growth = "geometric",
-  gender = gender
-)
-
-premium_5_specific <- price_case_15(
-  x = x_5,
+premium_5 <- price_case_15(
+  x = age,
   m = m,
   r = inflation,
   .mortality_file = .mortality_file,
   gender = gender,
-  interest = technical_interest
+  interest = nominal_interest
 )
 
-case_5_index <- get_case_index(
-  frac_pay = TRUE,
-  frac_value = FALSE,
-  growth = "geometric",
-  r = inflation,
-  initial_payment = "a"
-)
-
-data.frame(
-  caso = case_5_index,
-  prima_general = premium_5_general$premium,
-  prima_especifica = premium_5_specific,
-  diferencia = premium_5_general$premium - premium_5_specific
-)
+# #case_5_index <- get_case_index(
+#   frac_pay = TRUE,
+#   frac_value = FALSE,
+#   growth = "geometric",
+#   r = inflation,
+#   initial_payment = "a"
+# )
+# 
+# premium_5_specific
 ```
 
 ### Comparación del crecimiento del valor asegurado: punto 2 vs punto 5
 
-Se construye una sola gráfica para comparar el crecimiento del valor asegurado de los productos de los puntos 2 y 5 para un asegurado de 20 años.
+Se construye una gráfica para comparar el crecimiento del valor asegurado de los productos de los puntos 2 y 5 para la persona asegurada base.
 
+ 
 ```{r grafica_comparacion, fig.width=8, fig.height=5}
-horizon_years <- 30
+horizon_years <- max(n_values)
+r <- inflation
 time_grid <- seq(1 / m, horizon_years, by = 1 / m)
 
-# Punto 2: crecimiento aritmético dentro de cada año, esquema tipo "b"
+# Datos
 benefit_p2 <- 1 + r * (seq_along(time_grid) / m)
-
-# Punto 5: crecimiento geométrico cada año, esquema tipo "a"
 benefit_p5 <- rep((1 + r)^(0:(horizon_years - 1)), each = m)
 
-plot(
-  time_grid,
-  benefit_p2,
-  type = "l",
-  lwd = 2,
-  xlab = "Tiempo (años)",
-  ylab = "Valor asegurado",
-  main = "Comparación del crecimiento del valor asegurado"
+df <- data.frame(
+  time = time_grid,
+  p2 = benefit_p2,
+  p5 = benefit_p5
 )
-lines(time_grid, benefit_p5, lwd = 2, lty = 2)
-legend(
-  "topleft",
-  legend = c("Punto 2: aritmético intra-anual", "Punto 5: geométrico anual"),
-  lty = c(1, 2),
-  lwd = 2,
-  bty = "n"
+
+# Formato largo
+df_long <- rbind(
+  data.frame(time = df$time, value = df$p2, type = "Punto 2: aritmético intra-anual"),
+  data.frame(time = df$time, value = df$p5, type = "Punto 5: geométrico anual")
 )
+
+ggplot(df_long, aes(x = time, y = value, linetype = type)) +
+  geom_line(size = 1) +
+  labs(
+    title = "Comparación del crecimiento del valor asegurado",
+    x = "Tiempo (años)",
+    y = "Valor asegurado",
+    linetype = ""
+  ) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  scale_y_continuous(
+    breaks = scales::pretty_breaks(n = 6)
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "top"
+  )
 ```
 
-### Tabla de comparación de primas únicas por edad
+Además, se compara el valor de la prima única de los productos de los puntos 2 y 5 para una misma edad de emisión y distintos plazos de aseguramiento. Para ello se utiliza la función general `get_premium_insurance()`, manteniendo en cada caso la estructura propia del producto. 
 
-Se construye una sola tabla para comparar, por edad, la prima única del producto del punto 2 frente a la del producto del punto 5. Se usa el mismo rango de edades definido en `main.R`.
+```{r grafica_primas_comparacion, fig.width=8, fig.height=5}
+premium_p2 <- sapply(n_values, function(n) {
+  get_premium_insurance(
+    mortality_file = .mortality_file,
+    x = age,
+    n = n,
+    i = 0.1,
+    r = 0.05,
+    frac_pay = TRUE,
+    frac_value = TRUE,
+    initial_payment = "b"
+  )$premium
+})
 
-```{r tabla_comparacion}
-premium_comparison <- data.frame(
-  edad = x_values,
-  prima_punto_2 = sapply(
-    x_values,
-    function(xx) price_case_25(
-      x = xx,
-      m = m,
-      r = inflation,
-      .mortality_file = .mortality_file,
-      gender = gender,
-      interest = technical_interest
-    )
+premium_p5 <- sapply(n_values, function(n) {
+  get_premium_insurance(
+    mortality_file = .mortality_file,
+    x = age,
+    n = n,
+    i = 0.1,
+    r = 0.05,
+    frac_pay = TRUE,
+    frac_value = FALSE,
+    initial_payment = "a",
+    growth = "geometric"
+  )$premium
+})
+
+df_primas <- rbind(
+  data.frame(
+    n = n_values,
+    premium = premium_p2,
+    type = "Punto 2: aritmético intra-anual"
   ),
-  prima_punto_5 = sapply(
-    x_values,
-    function(xx) price_case_15(
-      x = xx,
-      m = m,
-      r = inflation,
-      .mortality_file = .mortality_file,
-      gender = gender,
-      interest = technical_interest
-    )
+  data.frame(
+    n = n_values,
+    premium = premium_p5,
+    type = "Punto 5: geométrico anual"
   )
 )
 
-premium_comparison$prima_punto_2 <- round(premium_comparison$prima_punto_2, 6)
-premium_comparison$prima_punto_5 <- round(premium_comparison$prima_punto_5, 6)
-
-premium_comparison
+ggplot(df_primas, aes(x = n, y = premium, linetype = type)) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "Comparación del valor de la prima única",
+    x = "Años asegurados (n)",
+    y = "Prima única",
+    linetype = ""
+  ) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  theme(
+    legend.position = "top"
+  )
 ```
+Ambos productos se comportan muy similar al inicio, pero para plazos asegurados altos, el producto con crecimiento geométrico es mucho más costos que el de crecimiento aritmético.
 
-### Organización del repositorio
+# Tabla de comparación de primas únicas por edad
+Va acá
+
+# Organización del repositorio
 
 La separación de archivos queda así:
 

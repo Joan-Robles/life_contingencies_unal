@@ -208,15 +208,4 @@ price_case_15 <- function(x,
 }
 
 
-# 
-# tst1 <- price_case_11(34, 12, 0.05, .mortality_file, "women", 0.25)
-# tst1
-# tst2 <- price_case_25(34, 12, 0.07, .mortality_file, "women", 0.15)
-# tst2
-# tst3 <- price_case_09(25, 12, 0.05, .mortality_file, "women", 0.1)
-# tst3
-# tst4 <- price_case_09_term(25, 12, 0.05, 50, .mortality_file, "women", 0.1)
-# tst4
-# 
-# tst5 <- Problem4(25, 12, 0.05, 49, .mortality_file, "women", 0.1)
-# tst5
+# test cases migrate to main

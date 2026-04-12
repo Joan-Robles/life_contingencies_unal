@@ -1,4 +1,6 @@
 
+# draft for Taller_1.Rmd (the definite file)
+
 # prep
 rm(list = ls())
 .initial_time <- Sys.time() # set timer
@@ -19,11 +21,9 @@ if (!requireNamespace("pacman", quietly = TRUE)) {
 
 # Load (and install if needed) packages
 pacman::p_load(
-  readxl,
   dplyr,
   parallel,
   pdftools,
-  fanplot,
   plotly
 )
 
@@ -123,7 +123,6 @@ get_case_index(frac_pay = TRUE,
 A$premium; tst5
 
 # Nice plots --------------------------------------------------------------
-
 
 
 premium_table <- evaluate_premium_grid(
