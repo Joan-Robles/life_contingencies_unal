@@ -32,59 +32,45 @@ real_interest <- 0.025
 nominal_interest <- (1 + inflation) * (1 + real_interest) - 1
 print(round(nominal_interest * 100, 2))
 ```
-Otros:
+
+Otros parámetros y paquetes:
 ```{r parametros}
-rm(list = ls())
-.initial_time <- Sys.time()
-set.seed(123)
+# seed
+seed <- 123
+set.seed(seed)
 
-# No se cargan paquetes con library(); solo se verifica que existan
-# y se usan por namespace cuando hace falta.
-if (!requireNamespace("dplyr", quietly = TRUE)) {
-  stop("Se requiere el paquete 'dplyr' para ejecutar las funciones auxiliares del proyecto.")
-}
-if (!requireNamespace("pdftools", quietly = TRUE)) {
-  stop("Se requiere el paquete 'pdftools' para leer la tabla de mortalidad desde el PDF.")
-}
-
-# Objetos que usan las funciones ya escritas en el repo
-`%>%` <- dplyr::`%>%`
-mutate <- dplyr::mutate
-
-# Funciones del proyecto
+# dependencies
 source("general_functions.R")
 source("life_ensurance.R")
 source("specific_functions.R")
 
-# Parámetros del main
-n_sim <- 1000
+# Other
+
 file_path <- file.path(getwd(), "res-1555-2010.pdf")
-i <- 0.025
-inflation <- 0.052
 x_values <- 45:90
 n_values <- 1:30
 
 # Parámetros adicionales del taller
 m <- 12
 gender <- "women"
-r <- 0.05
-real_interest <- i
-technical_interest <- (1 + inflation) * (1 + real_interest) - 1
 
+```
+
+Se emplea el paquete `pacman` para cargar paquetes e instalar lo que falte:
+```{r packages}
 # Lectura de la tabla de mortalidad
 .mortality_file <- pdftools::pdf_text(file_path)[2]
-mortality_table <- process_mortality_table(.mortality_file, technical_interest)
-mortality_table <- as.data.frame(mortality_table)
-
-round(technical_interest * 100, 2)
+mortality_table <- process_mortality_table(.mortality_file, technical_interest) %>% 
+  as.data.frame(mortality_table)
 ```
+
 
 ### Procesamiento de la tabla de mortalidad {#process}
 
 La función que procesa la tabla de mortalidad **no se redefine aquí**; se toma directamente desde `general_functions.R`. A continuación solo se muestra una vista rápida del objeto procesado.
 
 ```{r tabla_mortalidad}
-head(mortality_table[, c("age", "q_men", "q_women", "Ax_men", "Ax_women", "IAx_men", "IAx_women")])
+head(mortality_table, 15)
 ```
 
 ---
@@ -109,10 +95,10 @@ x_1 <- 34
 premium_1_general <- get_premium_insurance(
   mortality_file = .mortality_file,
   x = x_1,
-  n = Inf,
+  n = nominal_interestnf,
   i = technical_interest,
   m = m,
-  r = r,
+  r = inflation,
   frac_pay = TRUE,
   frac_value = FALSE,
   initial_payment = "a",
@@ -123,7 +109,7 @@ premium_1_general <- get_premium_insurance(
 premium_1_specific <- price_case_11(
   x = x_1,
   m = m,
-  r = r,
+  r = inflation,
   .mortality_file = .mortality_file,
   gender = gender,
   interest = technical_interest
@@ -133,7 +119,7 @@ case_1_index <- get_case_index(
   frac_pay = TRUE,
   frac_value = FALSE,
   growth = "arithmetic",
-  r = r,
+  r = inflation,
   initial_payment = "a"
 )
 
@@ -161,10 +147,10 @@ x_2 <- 27
 premium_2_general <- get_premium_insurance(
   mortality_file = .mortality_file,
   x = x_2,
-  n = Inf,
+  n = nominal_interestnf,
   i = technical_interest,
   m = m,
-  r = r,
+  r = inflation,
   frac_pay = TRUE,
   frac_value = TRUE,
   initial_payment = "b",
@@ -175,7 +161,7 @@ premium_2_general <- get_premium_insurance(
 premium_2_specific <- price_case_25(
   x = x_2,
   m = m,
-  r = r,
+  r = inflation,
   .mortality_file = .mortality_file,
   gender = gender,
   interest = technical_interest
@@ -185,7 +171,7 @@ case_2_index <- get_case_index(
   frac_pay = TRUE,
   frac_value = TRUE,
   growth = "arithmetic",
-  r = r,
+  r = inflation,
   initial_payment = "b"
 )
 
@@ -224,7 +210,7 @@ premium_3_general <- get_premium_insurance(
   n = n_3,
   i = technical_interest,
   m = m,
-  r = r,
+  r = inflation,
   frac_pay = TRUE,
   frac_value = TRUE,
   initial_payment = "a",
@@ -236,7 +222,7 @@ premium_3_specific <- price_case_09_term(
   x = x_3,
   n = n_3,
   m = m,
-  r = r,
+  r = inflation,
   .mortality_file = .mortality_file,
   gender = gender,
   interest = technical_interest
@@ -262,7 +248,7 @@ n_4 <- 50
 premium_4 <- Problem4(
   x = x_4,
   m = m,
-  r = r,
+  r = inflation,
   n = n_4,
   .mortality_file = .mortality_file,
   gender = gender,
@@ -298,10 +284,10 @@ x_5 <- 26
 premium_5_general <- get_premium_insurance(
   mortality_file = .mortality_file,
   x = x_5,
-  n = Inf,
+  n = nominal_interestnf,
   i = technical_interest,
   m = m,
-  r = r,
+  r = inflation,
   frac_pay = TRUE,
   frac_value = FALSE,
   initial_payment = "a",
@@ -312,7 +298,7 @@ premium_5_general <- get_premium_insurance(
 premium_5_specific <- price_case_15(
   x = x_5,
   m = m,
-  r = r,
+  r = inflation,
   .mortality_file = .mortality_file,
   gender = gender,
   interest = technical_interest
@@ -322,7 +308,7 @@ case_5_index <- get_case_index(
   frac_pay = TRUE,
   frac_value = FALSE,
   growth = "geometric",
-  r = r,
+  r = inflation,
   initial_payment = "a"
 )
 
@@ -339,7 +325,7 @@ data.frame(
 Se construye una sola gráfica para comparar el crecimiento del valor asegurado de los productos de los puntos 2 y 5 para un asegurado de 20 años.
 
 ```{r grafica_comparacion, fig.width=8, fig.height=5}
-horizon_years <- 5
+horizon_years <- 30
 time_grid <- seq(1 / m, horizon_years, by = 1 / m)
 
 # Punto 2: crecimiento aritmético dentro de cada año, esquema tipo "b"
@@ -379,7 +365,7 @@ premium_comparison <- data.frame(
     function(xx) price_case_25(
       x = xx,
       m = m,
-      r = r,
+      r = inflation,
       .mortality_file = .mortality_file,
       gender = gender,
       interest = technical_interest
@@ -390,7 +376,7 @@ premium_comparison <- data.frame(
     function(xx) price_case_15(
       x = xx,
       m = m,
-      r = r,
+      r = inflation,
       .mortality_file = .mortality_file,
       gender = gender,
       interest = technical_interest
