@@ -28,6 +28,7 @@ Este proyecto se realizó en R y está disponible en el siguiente repositorio de
 - Tabla colombiana de mortalidad de asegurados 1998-2003. Extraída de la   resolución 1555 DE 2010. Contiene información para edades desde los 15 hasta los 110 años. 
 - Tasa de crecimiento $r$ del valor asegurado de 5.1\%, correspondiente a la inflación. Se define así para mantener el poder adquisitivo del valor asegurado.
 - Tasa de interés técnica de 7.73\%, correspondiente a la composición de interés real e inflación. 
+- La persona asegurada, con la que se evalúan los productos de la sección de [funciones específicas](#products), es una mujer de 60 años. Para los seguro temporales, la temporalidad base es 40 años. En la sección de [resultados y comparaciones](#results) se evalúan otras edades y horizontes de cobertura.
 
 ```{r warning=FALSE}
 inflation <- 0.051
@@ -57,7 +58,7 @@ n_values <- 1:40
 m <- 12 # like months
 gender <- "women"
 age <- 60
-base_n <- 30
+base_n <- max(n_values)
 ```
 
 Se emplea el paquete `pacman` para cargar paquetes e instalar lo que falte:
@@ -125,7 +126,7 @@ head(mortality_table, 10)
 ```
 
 ---
-# Productos
+# Productos {#products}
 Antes de construir la función correspondiente a cada producto, se hizo una lista de todas las posibilidades. La lista corresponde a todas las combinaciones de parámetros de `get_premium_insurance`. Los parámetros son: La variable `frac_pay` indica si el pago del seguro se realiza de manera fraccionada (TRUE) o anual (FALSE). Por su parte, `frac_value` señala si el valor asegurado crece dentro del año (TRUE) o únicamente entre años (FALSE). El parámetro `growth` define la forma del crecimiento del beneficio, pudiendo ser aritmético ("arithmetic") o geométrico ("geometric"). La variable `r_case` distingue entre ausencia de crecimiento ("zero", cuando r = 0) y presencia de crecimiento ("nonzero"). Finalmente, `initial_payment` especifica si el esquema comienza en el nivel base ("a") o incorpora el primer incremento desde el inicio ("b"). Cada combinación posible de estas características define un producto distinto, identificado de manera única mediante un índice.
 
 ```{r cases_table}
@@ -392,6 +393,7 @@ plot_benefit_comparison(
   m = m
 )
 ```
+
 Evidentemente, el crecimiento geométrico es más rápido.
 
 Además, se compara el valor de la prima única de los productos de los puntos 2 y 5  para la persona asegurada con los parámetros base y distintos plazos de asegurmaniento. Para ello se utiliza la función general `get_premium_insurance()`, por ser vectorizada, manteniendo en cada caso la estructura propia del producto. 
@@ -408,8 +410,10 @@ plot_premium_comparison(
 
 Ambos productos se comportan muy similar al inicio, pero para plazos asegurados altos, el producto con crecimiento geométrico es mucho más costos que el de crecimiento aritmético.
 
-# Resultados comparados
+# Resultados comparados {#results}
 En esta sección se comparan las primas únicas de los productos 1, 2, 3 y 5. Respectivamente: seguro entero fraccionario con crecimiento aritmético cada año, seguro entero fraccionario con crecimiento aritmético dentro de cada año, seguro temporal fraccionario con crecimiento aritmético dentro de cada año y seguro entero fraccionario con crecimiento geométrico cada año. Para ello se construyen mapas de calor sobre la misma grilla de edades y plazos, y posteriormente se comparan los productos 2, 3 y 5 con el producto 1 (el base) a partir de sus diferencias de prima.
+
+## Primas
 
 ```{r heatmap_producto_1, fig.height=5, fig.width=8, warning=FALSE}
 premium_table_p1 <- evaluate_premium_grid(
@@ -515,8 +519,10 @@ Hay varias conclusiones:
 - Para personas de edad alta, hay un punto en el que incrementar el número de años asegurados no incrementa el valor de la prima, esto se debe a la edad terminal $w$. Por ejemplo, es lo mismo para una persona de 90 años comprar un seguro para 20 años o para 30: el riesgo cubierto es el mismo. 
 - La prima del seguro geométrico crece más rápido con los años asegurados que el caso aritmético, como se observó arriba para una edad específica. 
 
+## Comparaciones
 
 Para hacer las comparaciones se calculan las diferencias:
+
 ```{r diferencias_vs_producto_1}
 diff_p2_p1 <- premium_table_p2
 diff_p2_p1$z <- premium_table_p2$z - premium_table_p1$z
