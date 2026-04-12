@@ -25,7 +25,7 @@ Este proyecto se realizó en R y está disponible en el siguiente repositorio de
 
 # Datos y parámetros {#data}
 
-- Tabla colombiana de mortalidad de asegurados 1998-2003. Extraída de la   resolución 1555 DE 2010.
+- Tabla colombiana de mortalidad de asegurados 1998-2003. Extraída de la   resolución 1555 DE 2010. Contiene información para edades desde los 15 hasta los 110 años. 
 - Tasa de crecimiento $r$ del valor asegurado de 5.1\%, correspondiente a la inflación. Se define así para mantener el poder adquisitivo del valor asegurado.
 - Tasa de interés técnica de 7.73\%, correspondiente a la composición de interés real e inflación. 
 
@@ -121,30 +121,49 @@ mortality_table <- process_mortality_table(.mortality_file, nominal_interest) %>
   as.data.frame()
 
 # show
-head(mortality_table, 15)
+head(mortality_table, 10)
 ```
 
 ---
 # Productos
-Antes de construir la función correspondiente a cada producto, 
-La función general es `get_premium_insurance()`, sus parámetros como `price_case_11()`.
+Antes de construir la función correspondiente a cada producto, se hizo una lista de todas las posibilidades. La lista corresponde a todas las combinaciones de parámetros de `get_premium_insurance`. Los parámetros son: La variable `frac_pay` indica si el pago del seguro se realiza de manera fraccionada (TRUE) o anual (FALSE). Por su parte, `frac_value` señala si el valor asegurado crece dentro del año (TRUE) o únicamente entre años (FALSE). El parámetro `growth` define la forma del crecimiento del beneficio, pudiendo ser aritmético ("arithmetic") o geométrico ("geometric"). La variable `r_case` distingue entre ausencia de crecimiento ("zero", cuando r = 0) y presencia de crecimiento ("nonzero"). Finalmente, `initial_payment` especifica si el esquema comienza en el nivel base ("a") o incorpora el primer incremento desde el inicio ("b"). Cada combinación posible de estas características define un producto distinto, identificado de manera única mediante un índice.
+
+```{r cases_table}
+# read mortality table
+case_table <- get_case_table()
+
+# show
+case_table
+```
+Por tanto, cada producto tiene un identificador y la función corrspondiente se nombra con este identificador. Por ejemplo, el producto del punto 1 corresponde a la combinación de parámetros 11 en la tabla de casos.
+
+El resto de esta sección está dedicado a exhibir el desarrollo algebráico de cada producto y mostrar el uso de la función específica construida. Las funciones se prueban para los parámetros de la sección de [parámetros](#data). El usuario puede cambiar los parámetros y ejecutar nuevamente el _Markdown_ para probarlo.  
+
 ## Punto 1
 
-Prima de un seguro entero fraccionario con crecimiento del valor asegurado con patrón aritmético cada año.
 
 ```{r, echo=FALSE, out.width="50%", fig.align="center"}
 knitr::include_graphics("plots/Pr1.jpg")
 ```
 
-La función específica de este punto está definida en `specific_functions.R` como `price_case_11()`.
+
+Prima de un seguro entero fraccionario con crecimiento del valor asegurado con patrón aritmético cada año. Para este punto se usa la función específica `price_case_11()` definida en `specific_functions.R`. El desarrollo algebráico es:
 
 \[
-P = \frac{i}{i^{(m)}}\left[(1-r)A_x + r(IA)_x\right]
+i^{(m)} = m\left((1+i)^{1/m}-1\right)
 \]
 
-```{r punto_1}
+\[
+P_1 = \frac{i}{i^{(m)}}\left[A_x + r\left((IA)_x - A_x\right)\right]
+\]
 
-premium_1_specific <- price_case_11(
+\[
+P_1 = \frac{i}{i^{(m)}}\left[(1-r)A_x + r(IA)_x\right]
+\]
+
+
+```{r punto_1}
+premium_1 <- price_case_11(
   x = age,
   m = m,
   r = inflation,
@@ -153,29 +172,46 @@ premium_1_specific <- price_case_11(
   interest = nominal_interest
 )
 
-case_1_index <- get_case_index(
-  frac_pay = TRUE,
-  frac_value = FALSE,
-  growth = "arithmetic",
-  r = inflation,
-  initial_payment = "a"
-)
-
+cat("Valor de la prima:", premium_1)
 ```
 
 ## Punto 2
-
-Prima de un seguro entero fraccionario con crecimiento del valor asegurado con patrón aritmético dentro de cada año.
 
 ```{r, echo=FALSE, out.width="50%", fig.align="center"}
 knitr::include_graphics("plots/pR2.jpg")
 ```
 
-Para este punto se usa la función específica `price_case_25()` definida en `specific_functions.R`.
+Prima de un seguro entero fraccionario con crecimiento del valor asegurado con patrón aritmético dentro de cada año.
+Para este punto se usa la función específica `price_case_25()` definida en `specific_functions.R`. El desarrollo algebráico es:
+
+\[
+i^{(m)} = m\left((1+i)^{1/m}-1\right)
+\]
+
+\[
+P_2
+=
+\frac{i}{i^{(m)}}\left[(1-r)A_x+r(IA)_x\right]
++
+r\frac{i-i^{(m)}}{(i^{(m)})^2}A_x
++
+\frac{r}{m}\frac{i}{i^{(m)}}A_x
+\]
+
+\[
+P_2
+=
+\frac{i}{i^{(m)}}\left[(1-r)A_x+r(IA)_x\right]
++
+r\left[
+\frac{i-i^{(m)}}{(i^{(m)})^2}
++
+\frac{i}{m i^{(m)}}
+\right]A_x
+\]
 
 ```{r punto_2}
-
-premium_2_specific <- price_case_25(
+premium_2 <- price_case_25(
   x = age,
   m = m,
   r = inflation,
@@ -184,35 +220,47 @@ premium_2_specific <- price_case_25(
   interest = nominal_interest
 )
 
-case_2_index <- get_case_index(
-  frac_pay = TRUE,
-  frac_value = TRUE,
-  growth = "arithmetic",
-  r = inflation,
-  initial_payment = "b"
-)
-
+cat("Valor de la prima:", premium_2)
 ```
 
 ## Punto 3
 
-Prima de un seguro temporal fraccionario con crecimiento del valor asegurado con patrón aritmético dentro de cada año.
 
 ```{r, echo=FALSE, out.width="70%", fig.align="center"}
 knitr::include_graphics("plots/Pr3.jpg")
 ```
 
-La simplificación usada es:
+Prima de un seguro temporal fraccionario con crecimiento del valor asegurado con patrón aritmético dentro de cada año.
+La función específica de este punto está definida en `specific_functions.R` como `price_case_09_term()`. El desarrollo algebráico es:
 
 \[
-P = \frac{i}{i^{(m)}}\left[(1-r)A_{x:\overline{n}|} + r(IA)_{x:\overline{n}|}\right]
-+ r\frac{i - i^{(m)}}{(i^{(m)})^2}A_{x:\overline{n}|}
+i^{(m)} = m\left((1+i)^{1/m}-1\right)
 \]
 
-La función específica de este punto está definida en `specific_functions.R` como `price_case_09_term()`.
+\[
+A_{x:\overline{n}|}
+=
+\sum_{k=1}^{n} v^k \, {}_{k-1}p_x q_{x+k-1}
+\]
+
+\[
+(IA)_{x:\overline{n}|}
+=
+\sum_{k=1}^{n} k v^k \, {}_{k-1}p_x q_{x+k-1}
+\]
+
+\[
+P_3
+=
+\frac{i}{i^{(m)}}\left[(1-r)A_{x:\overline{n}|}
++
+r(IA)_{x:\overline{n}|}\right]
++
+r\frac{i-i^{(m)}}{(i^{(m)})^2}A_{x:\overline{n}|}
+\]
 
 ```{r punto_3}
-premium_3_specific <- price_case_09_term(
+premium_3 <- price_case_09_term(
   x = age,
   n = base_n,
   m = m,
@@ -221,13 +269,42 @@ premium_3_specific <- price_case_09_term(
   gender = gender,
   interest = nominal_interest
 )
+
+cat("Valor de la prima:", premium_3)
 ```
 
 ## Punto 4
 
 Prima de un seguro dotal, obtenido al agregar un seguro dotal puro al anterior.
+La función disponible en el repositorio para este punto está definida en `specific_functions.R` con el nombre `Problem4()`. El desarrollo algebráico es: 
 
-La función disponible en el repositorio para este punto está definida en `specific_functions.R` con el nombre `Problem4()`.
+\[
+{}_{n}E_x = v^n \, {}_np_x
+\]
+
+\[
+{}_{n}p_x
+=
+\prod_{j=0}^{n-1}(1-q_{x+j})
+\]
+
+\[
+P_4
+=
+{}_{n}E_x + P_3
+\]
+
+\[
+P_4
+=
+v^n\,{}_{n}p_x
++
+\frac{i}{i^{(m)}}\left[(1-r)A_{x:\overline{n}|}
++
+r(IA)_{x:\overline{n}|}\right]
++
+r\frac{i-i^{(m)}}{(i^{(m)})^2}A_{x:\overline{n}|}
+\]
 
 ```{r punto_4}
 premium_4 <- Problem4(
@@ -240,31 +317,57 @@ premium_4 <- Problem4(
   interest = nominal_interest
 )
 
-premium_4
+cat("Valor de la prima:", premium_4)
 ```
 
 ## Punto 5
 
-Prima de un seguro entero fraccionario con crecimiento del valor asegurado con patrón geométrico cada año.
 
 ```{r, echo=FALSE, out.width="50%", fig.align="center"}
 knitr::include_graphics("plots/Pr5.jpg")
 ```
 
-La forma cerrada usada es:
+
+Prima de un seguro entero fraccionario con crecimiento del valor asegurado con patrón geométrico cada año. La función específica de este punto está definida en `specific_functions.R` como `price_case_15()`. El desarrollo algebráico es:
 
 \[
 i^* = \frac{i-r}{1+r}
 \]
 
 \[
-P = \frac{i}{i^{(m)}}\cdot\frac{1}{1+r}\,A_x(i^*)
+v^* = \frac{1}{1+i^*}
+=
+\frac{1+r}{1+i}
 \]
 
-La función específica de este punto está definida en `specific_functions.R` como `price_case_15()`.
+\[
+A_x(i^*)
+=
+\sum_{k=0}^{\omega-x} (v^*)^{k+1} \, {}_kp_x q_{x+k}
+\]
+
+\[
+P_5
+=
+\frac{i}{i^{(m)}}\sum_{k=0}^{\omega-x}
+(1+r)^k v^{k+1} \, {}_kp_x q_{x+k}
+\]
+
+\[
+P_5
+=
+\frac{i}{i^{(m)}}\frac{1}{1+r}
+\sum_{k=0}^{\omega-x}
+(v^*)^{k+1} \, {}_kp_x q_{x+k}
+\]
+
+\[
+P_5
+=
+\frac{i}{i^{(m)}}\frac{1}{1+r}A_x(i^*)
+\]
 
 ```{r punto_5}
-
 premium_5 <- price_case_15(
   x = age,
   m = m,
@@ -274,15 +377,7 @@ premium_5 <- price_case_15(
   interest = nominal_interest
 )
 
-# #case_5_index <- get_case_index(
-#   frac_pay = TRUE,
-#   frac_value = FALSE,
-#   growth = "geometric",
-#   r = inflation,
-#   initial_payment = "a"
-# )
-# 
-# premium_5_specific
+cat("Valor de la prima:", premium_5)
 ```
 
 ### Comparación del crecimiento del valor asegurado: punto 2 vs punto 5
