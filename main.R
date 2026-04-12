@@ -139,4 +139,4 @@ premium_table <- evaluate_premium_grid(
 
 
 heatmap_xyz(x = premium_table$x, y = premium_table$y, z = premium_table$z,
-            xlab = "Edad", ylab = "Años asegurados")
+            xlab = "Edad", ylab = "Años asegurados", main = "Producto ...") 

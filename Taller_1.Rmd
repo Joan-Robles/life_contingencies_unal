@@ -50,8 +50,8 @@ source("specific_functions.R")
 
 # for plotting
 file_path <- file.path(getwd(), "res-1555-2010.pdf")
-x_values <- 45:90
-n_values <- 1:30
+x_values <- 25:70
+n_values <- 1:50
 
 # baseline
 m <- 12 # like months
@@ -382,109 +382,188 @@ cat("Valor de la prima:", premium_5)
 
 ### Comparación del crecimiento del valor asegurado: punto 2 vs punto 5
 
-Se construye una gráfica para comparar el crecimiento del valor asegurado de los productos de los puntos 2 y 5 para la persona asegurada base.
+Se construye una gráfica para comparar el crecimiento del valor asegurado de los productos de los puntos 2 y 5.
 
  
 ```{r grafica_comparacion, fig.width=8, fig.height=5}
-horizon_years <- max(n_values)
-r <- inflation
-time_grid <- seq(1 / m, horizon_years, by = 1 / m)
-
-# Datos
-benefit_p2 <- 1 + r * (seq_along(time_grid) / m)
-benefit_p5 <- rep((1 + r)^(0:(horizon_years - 1)), each = m)
-
-df <- data.frame(
-  time = time_grid,
-  p2 = benefit_p2,
-  p5 = benefit_p5
+plot_benefit_comparison(
+  n_values = n_values,
+  inflation = inflation,
+  m = m
 )
-
-# Formato largo
-df_long <- rbind(
-  data.frame(time = df$time, value = df$p2, type = "Punto 2: aritmético intra-anual"),
-  data.frame(time = df$time, value = df$p5, type = "Punto 5: geométrico anual")
-)
-
-ggplot(df_long, aes(x = time, y = value, linetype = type)) +
-  geom_line(size = 1) +
-  labs(
-    title = "Comparación del crecimiento del valor asegurado",
-    x = "Tiempo (años)",
-    y = "Valor asegurado",
-    linetype = ""
-  ) +
-  scale_linetype_manual(values = c("solid", "dashed")) +
-  scale_y_continuous(
-    breaks = scales::pretty_breaks(n = 6)
-  ) +
-  theme_minimal() +
-  theme(
-    legend.position = "top"
-  )
 ```
+Evidentemente, el crecimiento geométrico es más rápido.
 
-Además, se compara el valor de la prima única de los productos de los puntos 2 y 5 para una misma edad de emisión y distintos plazos de aseguramiento. Para ello se utiliza la función general `get_premium_insurance()`, manteniendo en cada caso la estructura propia del producto. 
+Además, se compara el valor de la prima única de los productos de los puntos 2 y 5  para la persona asegurada con los parámetros base y distintos plazos de asegurmaniento. Para ello se utiliza la función general `get_premium_insurance()`, por ser vectorizada, manteniendo en cada caso la estructura propia del producto. 
 
 ```{r grafica_primas_comparacion, fig.width=8, fig.height=5}
-premium_p2 <- sapply(n_values, function(n) {
-  get_premium_insurance(
-    mortality_file = .mortality_file,
-    x = age,
-    n = n,
-    i = 0.1,
-    r = 0.05,
-    frac_pay = TRUE,
-    frac_value = TRUE,
-    initial_payment = "b"
-  )$premium
-})
-
-premium_p5 <- sapply(n_values, function(n) {
-  get_premium_insurance(
-    mortality_file = .mortality_file,
-    x = age,
-    n = n,
-    i = 0.1,
-    r = 0.05,
-    frac_pay = TRUE,
-    frac_value = FALSE,
-    initial_payment = "a",
-    growth = "geometric"
-  )$premium
-})
-
-df_primas <- rbind(
-  data.frame(
-    n = n_values,
-    premium = premium_p2,
-    type = "Punto 2: aritmético intra-anual"
-  ),
-  data.frame(
-    n = n_values,
-    premium = premium_p5,
-    type = "Punto 5: geométrico anual"
-  )
+plot_premium_comparison(
+  n_values = n_values,
+  age = age,
+  mortality_file = .mortality_file,
+  i = nominal_interest,
+  r = inflation
 )
-
-ggplot(df_primas, aes(x = n, y = premium, linetype = type)) +
-  geom_line(linewidth = 1) +
-  labs(
-    title = "Comparación del valor de la prima única",
-    x = "Años asegurados (n)",
-    y = "Prima única",
-    linetype = ""
-  ) +
-  scale_linetype_manual(values = c("solid", "dashed")) +
-  theme_minimal() +
-  theme(
-    legend.position = "top"
-  )
 ```
+
 Ambos productos se comportan muy similar al inicio, pero para plazos asegurados altos, el producto con crecimiento geométrico es mucho más costos que el de crecimiento aritmético.
 
-# Tabla de comparación de primas únicas por edad
-Va acá
+# Resultados comparados
+En esta sección se comparan las primas únicas de los productos 1, 2, 3 y 5. Respectivamente: seguro entero fraccionario con crecimiento aritmético cada año, seguro entero fraccionario con crecimiento aritmético dentro de cada año, seguro temporal fraccionario con crecimiento aritmético dentro de cada año y seguro entero fraccionario con crecimiento geométrico cada año. Para ello se construyen mapas de calor sobre la misma grilla de edades y plazos, y posteriormente se comparan los productos 2, 3 y 5 con el producto 1 (el base) a partir de sus diferencias de prima.
+
+```{r heatmap_producto_1, fig.height=5, fig.width=8, warning=FALSE}
+premium_table_p1 <- evaluate_premium_grid(
+  x_values = x_values,
+  n_values = n_values,
+  pricing_fun = get_premium_insurance,
+  mortality_file = .mortality_file,
+  i = 0.1,
+  r = 0.05,
+  frac_pay = TRUE,
+  frac_value = FALSE,
+  initial_payment = "a",
+  growth = "arithmetic"
+)
+
+heatmap_xyz(
+  x = premium_table_p1$x,
+  y = premium_table_p1$y,
+  z = premium_table_p1$z,
+  xlab = "Edad",
+  ylab = "Años asegurados",
+  main = "Seguro entero fraccionario con crecimiento aritmético cada año"
+)
+```
+
+```{r heatmap_producto_2, fig.height=5, fig.width=8, warning=FALSE}
+premium_table_p2 <- evaluate_premium_grid(
+  x_values = x_values,
+  n_values = n_values,
+  pricing_fun = get_premium_insurance,
+  mortality_file = .mortality_file,
+  i = 0.1,
+  r = 0.05,
+  frac_pay = TRUE,
+  frac_value = TRUE,
+  initial_payment = "b",
+  growth = "arithmetic"
+)
+
+heatmap_xyz(
+  x = premium_table_p2$x,
+  y = premium_table_p2$y,
+  z = premium_table_p2$z,
+  xlab = "Edad",
+  ylab = "Años asegurados",
+  main = "Seguro entero fraccionario con crecimiento aritmético dentro de cada año"
+)
+```
+
+```{r heatmap_producto_3, fig.height=5, fig.width=8, warning=FALSE}
+premium_table_p3 <- evaluate_premium_grid(
+  x_values = x_values,
+  n_values = n_values,
+  pricing_fun = get_premium_insurance,
+  mortality_file = .mortality_file,
+  gender = "women",
+  i = 0.1,
+  r = 0.05,
+  frac_pay = TRUE,
+  frac_value = TRUE,
+  initial_payment = "a",
+  growth = "arithmetic"
+)
+
+heatmap_xyz(
+  x = premium_table_p3$x,
+  y = premium_table_p3$y,
+  z = premium_table_p3$z,
+  xlab = "Edad",
+  ylab = "Años asegurados",
+  main = "Seguro temporal fraccionario con crecimiento aritmético dentro de cada año"
+)
+```
+
+```{r heatmap_producto_5, fig.height=5, fig.width=8, warning=FALSE}
+premium_table_p5 <- evaluate_premium_grid(
+  x_values = x_values,
+  n_values = n_values,
+  pricing_fun = get_premium_insurance,
+  mortality_file = .mortality_file,
+  i = 0.1,
+  r = 0.05,
+  frac_pay = TRUE,
+  frac_value = FALSE,
+  initial_payment = "a",
+  growth = "geometric"
+)
+
+heatmap_xyz(
+  x = premium_table_p5$x,
+  y = premium_table_p5$y,
+  z = premium_table_p5$z,
+  xlab = "Edad",
+  ylab = "Años asegurados",
+  main = "Seguro entero fraccionario con crecimiento geométrico cada año"
+)
+```
+
+Hay varias conclusiones:
+
+- El valor de la prima crece con la edad.
+- El valor de la prima crece con el número de años asegurados.
+- Para personas de edad alta, hay un punto en el que incrementar el número de años asegurados no incrementa el valor de la prima, esto se debe a la edad terminal $w$. Por ejemplo, es lo mismo para una persona de 90 años comprar un seguro para 20 años o para 30: el riesgo cubierto es el mismo. 
+- La prima del seguro geométrico crece más rápido con los años asegurados que el caso aritmético, como se observó arriba para una edad específica. 
+
+
+Para hacer las comparaciones se calculan las diferencias:
+```{r diferencias_vs_producto_1}
+diff_p2_p1 <- premium_table_p2
+diff_p2_p1$z <- premium_table_p2$z - premium_table_p1$z
+
+diff_p3_p1 <- premium_table_p3
+diff_p3_p1$z <- premium_table_p3$z - premium_table_p1$z
+
+diff_p5_p1 <- premium_table_p5
+diff_p5_p1$z <- premium_table_p5$z - premium_table_p1$z
+```
+
+Y se obtienen los siguientes resultados:
+```{r heatmap_diff_p2_p1, fig.height=5, fig.width=8, warning=FALSE}
+heatmap_xyz(
+  x = diff_p2_p1$x,
+  y = diff_p2_p1$y,
+  z = diff_p2_p1$z,
+  xlab = "Edad",
+  ylab = "Años asegurados",
+  main = "Diferencia de primas: producto 2 - producto 1"
+)
+```
+
+
+
+```{r heatmap_diff_p3_p1, fig.height=5, fig.width=8, warning=FALSE}
+heatmap_xyz(
+  x = diff_p3_p1$x,
+  y = diff_p3_p1$y,
+  z = diff_p3_p1$z,
+  xlab = "Edad",
+  ylab = "Años asegurados",
+  main = "Diferencia de primas: producto 3 - producto 1"
+)
+
+```
+
+```{r heatmap_diff_p5_p1, fig.height=5, fig.width=8, warning=FALSE}
+heatmap_xyz(
+  x = diff_p5_p1$x,
+  y = diff_p5_p1$y,
+  z = diff_p5_p1$z,
+  xlab = "Edad",
+  ylab = "Años asegurados",
+  main = "Diferencia de primas: producto 5 - producto 1"
+)
+```
 
 # Organización del repositorio
 
