@@ -50,8 +50,8 @@ source("specific_functions.R")
 
 # for plotting
 file_path <- file.path(getwd(), "res-1555-2010.pdf")
-x_values <- 25:70
-n_values <- 1:50
+x_values <- 30:70
+n_values <- 1:40
 
 # baseline
 m <- 12 # like months
@@ -540,6 +540,7 @@ heatmap_xyz(
 )
 ```
 
+El seguro 2 es más caro porque el valor asegurado crece cada mes, no solo a final, así que el valor promedio es ligeramente mayor. 
 
 
 ```{r heatmap_diff_p3_p1, fig.height=5, fig.width=8, warning=FALSE}
@@ -554,6 +555,9 @@ heatmap_xyz(
 
 ```
 
+
+El seguro 3 es más caro por la misma razón. La diferencia radica en el pago inicial y es mínima. 
+
 ```{r heatmap_diff_p5_p1, fig.height=5, fig.width=8, warning=FALSE}
 heatmap_xyz(
   x = diff_p5_p1$x,
@@ -565,13 +569,20 @@ heatmap_xyz(
 )
 ```
 
+
+El seguro 5 es con diferencia el más caro, debido a su tipo de crecimiento. En particular, para personas de edad avanzada y alto número de años asegurados.
+
 # Organización del repositorio
 
-La separación de archivos queda así:
+Los archivos disponibles en el repositorio son:
 
-- `general_functions.R`: procesamiento de mortalidad y helpers generales.
-- `life_ensurance.R`: motor general de pricing y router por casos.
-- `specific_functions.R`: funciones cerradas para casos particulares.
-- `Taller_1.Rmd`: documento que explica, ejecuta y compara resultados, sin duplicar las funciones.
-
-Con esta organización, cualquier corrección a una función se hace en un solo lugar y el reporte se actualiza al volver a ejecutar el `.Rmd`.
+- `general_functions.R`: procesamiento de la tabla de mortalidad y funciones auxiliares (construcción de \(l_x\), \(d_x\), funciones de conmutación, etc.).
+- `life_ensurance.R`: motor general de pricing (`get_premium_insurance`) y lógica de enrutamiento hacia cada caso según parámetros.
+- `specific_functions.R`: funciones con soluciones cerradas para casos particulares (por ejemplo, `price_case_11`, `price_case_25`, `price_case_09_term`, `price_case_15`).
+- `general_graphs.R`: funciones para visualización (heatmaps, fancharts, comparaciones de primas y beneficios).
+- `Taller_1.Rmd`: documento principal que explica los productos, ejecuta los cálculos y presenta comparaciones sin duplicar código.
+- `playground.R`: archivo auxiliar para pruebas, debugging y experimentación fuera del flujo principal del taller.
+- `instructions.pdf`: enunciado original del taller con la definición de los productos a valorar.
+- `res-1555-2010.pdf`: tabla de mortalidad utilizada como base técnica para los cálculos actuariales.
+- `plots/`: carpeta que contiene figuras de apoyo (esquemas de beneficios de cada producto incluidos en el documento).
+- `.gitignore`: archivo de configuración para excluir archivos no relevantes del control de versiones (outputs, temporales, etc.).
