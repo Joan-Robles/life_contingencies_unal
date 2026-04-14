@@ -371,8 +371,10 @@ mortalidad</a></li>
 </ul></li>
 <li><a href="#results" id="toc-results"><span class="toc-section-number">5</span> Resultados comparados</a>
 <ul>
-<li><a href="#primas" id="toc-primas"><span class="toc-section-number">5.1</span> Primas</a></li>
-<li><a href="#comparaciones" id="toc-comparaciones"><span class="toc-section-number">5.2</span> Comparaciones</a></li>
+<li><a href="#tabla-de-resultados-mismo-n" id="toc-tabla-de-resultados-mismo-n"><span class="toc-section-number">5.1</span> Tabla de resultados (mismo
+n)</a></li>
+<li><a href="#primas" id="toc-primas"><span class="toc-section-number">5.2</span> Primas</a></li>
+<li><a href="#comparaciones" id="toc-comparaciones"><span class="toc-section-number">5.3</span> Comparaciones</a></li>
 </ul></li>
 <li><a href="#organizaci%C3%B3n-del-repositorio" id="toc-organización-del-repositorio"><span class="toc-section-number">6</span> Organización del
 repositorio</a></li>
@@ -844,12 +846,124 @@ comparados</h1>
 aritmético cada año, seguro entero fraccionario con crecimiento
 aritmético dentro de cada año, seguro temporal fraccionario con
 crecimiento aritmético dentro de cada año y seguro entero fraccionario
-con crecimiento geométrico cada año. Para ello se construyen mapas de
-calor sobre la misma grilla de edades y plazos, y posteriormente se
-comparan los productos 2, 3 y 5 con el producto 1 (el base) a partir de
-sus diferencias de prima.</p>
-<div id="primas" class="section level2" number="5.1">
-<h2><span class="header-section-number">5.1</span> Primas</h2>
+con crecimiento geométrico cada año. Para ello se construyen tablas para
+un mismo plazo de cobertura (20 años) y mapas de calor sobre una grilla
+de edades y plazos; posteriormente se comparan los productos 2, 3 y 5
+con el producto 1 (el base) a partir de sus diferencias de prima.</p>
+<div id="tabla-de-resultados-mismo-n" class="section level2" number="5.1">
+<h2><span class="header-section-number">5.1</span> Tabla de resultados
+(mismo n)</h2>
+<p>Los resultados para diferentes edades son los siguientes:</p>
+<pre class="r"><code>premium_table_5 &lt;- build_table_all_ages(
+  horizon_n = 20,
+  mortality_file = .mortality_file,
+  i = nominal_interest,
+  r = inflation,
+  m = m,
+  gender = gender
+)
+
+premium_table_5</code></pre>
+<pre><code>##    age producto_1 producto_2 producto_3 producto_4 producto_5
+## 1   15      0.005      0.005      0.005      0.229      0.006
+## 2   16      0.005      0.006      0.006      0.229      0.006
+## 3   17      0.006      0.006      0.006      0.230      0.006
+## 4   18      0.006      0.006      0.006      0.230      0.007
+## 5   19      0.006      0.006      0.006      0.230      0.007
+## 6   20      0.007      0.007      0.007      0.230      0.007
+## 7   21      0.007      0.007      0.007      0.230      0.008
+## 8   22      0.007      0.007      0.007      0.231      0.008
+## 9   23      0.008      0.008      0.008      0.231      0.009
+## 10  24      0.008      0.008      0.008      0.231      0.009
+## 11  25      0.009      0.009      0.009      0.231      0.010
+## 12  26      0.009      0.009      0.009      0.232      0.010
+## 13  27      0.010      0.010      0.010      0.232      0.011
+## 14  28      0.010      0.011      0.011      0.233      0.012
+## 15  29      0.011      0.011      0.011      0.233      0.013
+## 16  30      0.012      0.012      0.012      0.234      0.013
+## 17  31      0.013      0.013      0.013      0.234      0.014
+## 18  32      0.014      0.014      0.014      0.235      0.016
+## 19  33      0.015      0.015      0.015      0.236      0.017
+## 20  34      0.016      0.016      0.016      0.236      0.018
+## 21  35      0.017      0.018      0.018      0.237      0.019
+## 22  36      0.019      0.019      0.019      0.238      0.021
+## 23  37      0.020      0.020      0.020      0.239      0.023
+## 24  38      0.022      0.022      0.022      0.240      0.024
+## 25  39      0.023      0.024      0.024      0.241      0.026
+## 26  40      0.025      0.026      0.026      0.242      0.029
+## 27  41      0.027      0.028      0.028      0.244      0.031
+## 28  42      0.030      0.030      0.030      0.245      0.034
+## 29  43      0.032      0.033      0.033      0.247      0.036
+## 30  44      0.035      0.036      0.036      0.249      0.040
+## 31  45      0.038      0.039      0.039      0.251      0.043
+## 32  46      0.041      0.042      0.042      0.253      0.047
+## 33  47      0.045      0.046      0.046      0.255      0.051
+## 34  48      0.049      0.050      0.050      0.258      0.055
+## 35  49      0.053      0.054      0.054      0.261      0.060
+## 36  50      0.058      0.059      0.059      0.264      0.066
+## 37  51      0.064      0.065      0.065      0.268      0.072
+## 38  52      0.070      0.071      0.071      0.272      0.079
+## 39  53      0.076      0.078      0.077      0.276      0.086
+## 40  54      0.083      0.085      0.085      0.281      0.095
+## 41  55      0.091      0.093      0.093      0.286      0.104
+## 42  56      0.100      0.102      0.102      0.292      0.114
+## 43  57      0.110      0.112      0.112      0.298      0.125
+## 44  58      0.121      0.123      0.122      0.305      0.137
+## 45  59      0.132      0.135      0.134      0.313      0.150
+## 46  60      0.145      0.148      0.147      0.321      0.164
+## 47  61      0.159      0.162      0.161      0.330      0.180
+## 48  62      0.174      0.177      0.177      0.340      0.197
+## 49  63      0.191      0.194      0.194      0.351      0.216
+## 50  64      0.209      0.213      0.212      0.363      0.236
+## 51  65      0.228      0.232      0.232      0.376      0.258
+## 52  66      0.249      0.253      0.253      0.390      0.281
+## 53  67      0.271      0.276      0.275      0.405      0.306
+## 54  68      0.295      0.300      0.299      0.421      0.332
+## 55  69      0.320      0.326      0.325      0.438      0.360
+## 56  70      0.346      0.352      0.351      0.456      0.389
+## 57  71      0.373      0.380      0.379      0.475      0.419
+## 58  72      0.402      0.409      0.408      0.495      0.450
+## 59  73      0.431      0.439      0.438      0.516      0.481
+## 60  74      0.462      0.470      0.469      0.537      0.514
+## 61  75      0.492      0.501      0.500      0.559      0.546
+## 62  76      0.523      0.533      0.531      0.581      0.578
+## 63  77      0.553      0.564      0.562      0.604      0.610
+## 64  78      0.583      0.594      0.592      0.626      0.640
+## 65  79      0.611      0.623      0.621      0.648      0.668
+## 66  80      0.638      0.651      0.649      0.669      0.695
+## 67  81      0.664      0.677      0.675      0.690      0.719
+## 68  82      0.687      0.701      0.699      0.710      0.740
+## 69  83      0.709      0.723      0.721      0.728      0.759
+## 70  84      0.729      0.744      0.741      0.746      0.776
+## 71  85      0.747      0.762      0.760      0.763      0.791
+## 72  86      0.763      0.780      0.777      0.779      0.804
+## 73  87      0.779      0.796      0.793      0.794      0.816
+## 74  88      0.793      0.811      0.808      0.808      0.827
+## 75  89      0.807      0.825      0.822      0.822      0.837
+## 76  90      0.820      0.838      0.835      0.835      0.846
+## 77  91      0.832      0.851      0.848      0.848      0.855
+## 78  92      0.843      0.863      0.860         NA      0.863
+## 79  93      0.854      0.874      0.871         NA      0.871
+## 80  94      0.864      0.884      0.881         NA      0.879
+## 81  95      0.873      0.894      0.891         NA      0.886
+## 82  96      0.882      0.903      0.900         NA      0.893
+## 83  97      0.890      0.912      0.909         NA      0.899
+## 84  98      0.898      0.920      0.916         NA      0.905
+## 85  99      0.904      0.927      0.923         NA      0.911
+## 86 100      0.910      0.933      0.930         NA      0.916
+## 87 101      0.916      0.939      0.936         NA      0.920
+## 88 102      0.921      0.945      0.941         NA      0.925
+## 89 103      0.926      0.950      0.946         NA      0.929
+## 90 104      0.930      0.954      0.951         NA      0.932
+## 91 105      0.934      0.959      0.955         NA      0.936
+## 92 106      0.938      0.963      0.959         NA      0.939
+## 93 107      0.942      0.967      0.963         NA      0.943
+## 94 108      0.946      0.971      0.967         NA      0.946
+## 95 109      0.951      0.977      0.973         NA      0.951
+## 96 110      0.961      0.987      0.983         NA      0.961</code></pre>
+</div>
+<div id="primas" class="section level2" number="5.2">
+<h2><span class="header-section-number">5.2</span> Primas</h2>
 <pre class="r"><code>premium_table_p1 &lt;- evaluate_premium_grid(
   x_values = x_values,
   n_values = n_values,
@@ -953,8 +1067,8 @@ asegurados que el caso aritmético, como se observó arriba para una edad
 específica.</li>
 </ul>
 </div>
-<div id="comparaciones" class="section level2" number="5.2">
-<h2><span class="header-section-number">5.2</span> Comparaciones</h2>
+<div id="comparaciones" class="section level2" number="5.3">
+<h2><span class="header-section-number">5.3</span> Comparaciones</h2>
 <p>Para hacer las comparaciones se calculan las diferencias:</p>
 <pre class="r"><code>diff_p2_p1 &lt;- premium_table_p2
 diff_p2_p1$z &lt;- premium_table_p2$z - premium_table_p1$z

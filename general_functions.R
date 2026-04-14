@@ -250,3 +250,97 @@ evaluate_premium_grid <- function(x_values,
   rownames(out) <- NULL
   out
 }
+
+
+build_table_all_ages <- function(horizon_n = 20,
+                                 mortality_file,
+                                 i,
+                                 r,
+                                 m = 12,
+                                 gender = "women",
+                                 digits = 5) {
+    
+    mortality_table <- process_mortality_table(mortality_file, i)
+    x_values <- mortality_table[, "age"]
+    
+    premium_p1 <- get_premium_insurance(
+      mortality_file = mortality_file,
+      x = x_values,
+      n = horizon_n,
+      i = i,
+      r = r,
+      frac_pay = TRUE,
+      frac_value = FALSE,
+      initial_payment = "a",
+      growth = "arithmetic",
+      gender = gender,
+      m = m
+    )$premium
+    
+    premium_p2 <- get_premium_insurance(
+      mortality_file = mortality_file,
+      x = x_values,
+      n = horizon_n,
+      i = i,
+      r = r,
+      frac_pay = TRUE,
+      frac_value = TRUE,
+      initial_payment = "b",
+      growth = "arithmetic",
+      gender = gender,
+      m = m
+    )$premium
+    
+    premium_p3 <- get_premium_insurance(
+      mortality_file = mortality_file,
+      x = x_values,
+      n = horizon_n,
+      i = i,
+      r = r,
+      frac_pay = TRUE,
+      frac_value = TRUE,
+      initial_payment = "a",
+      growth = "arithmetic",
+      gender = gender,
+      m = m
+    )$premium
+    
+    premium_p4 <- sapply(x_values, function(age) {
+      Problem4(
+        x = age,
+        m = m,
+        r = r,
+        n = horizon_n,
+        .mortality_file = mortality_file,
+        gender = gender,
+        interest = i
+      )
+    })
+    
+    premium_p5 <- get_premium_insurance(
+      mortality_file = mortality_file,
+      x = x_values,
+      n = horizon_n,
+      i = i,
+      r = r,
+      frac_pay = TRUE,
+      frac_value = FALSE,
+      initial_payment = "a",
+      growth = "geometric",
+      gender = gender,
+      m = m
+    )$premium
+    
+    out <- data.frame(
+      age = x_values,
+      producto_1 = as.numeric(premium_p1),
+      producto_2 = as.numeric(premium_p2),
+      producto_3 = as.numeric(premium_p3),
+      producto_4 = as.numeric(premium_p4),
+      producto_5 = as.numeric(premium_p5)
+    )
+    
+    out[, -1] <- round(out[, -1], digits)
+    rownames(out) <- NULL
+    out
+  }

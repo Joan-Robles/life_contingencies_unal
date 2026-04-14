@@ -411,7 +411,24 @@ plot_premium_comparison(
 Ambos productos se comportan muy similar al inicio, pero para plazos asegurados altos, el producto con crecimiento geométrico es mucho más costos que el de crecimiento aritmético.
 
 # Resultados comparados {#results}
-En esta sección se comparan las primas únicas de los productos 1, 2, 3 y 5. Respectivamente: seguro entero fraccionario con crecimiento aritmético cada año, seguro entero fraccionario con crecimiento aritmético dentro de cada año, seguro temporal fraccionario con crecimiento aritmético dentro de cada año y seguro entero fraccionario con crecimiento geométrico cada año. Para ello se construyen mapas de calor sobre la misma grilla de edades y plazos, y posteriormente se comparan los productos 2, 3 y 5 con el producto 1 (el base) a partir de sus diferencias de prima.
+En esta sección se comparan las primas únicas de los productos 1, 2, 3 y 5. Respectivamente: seguro entero fraccionario con crecimiento aritmético cada año, seguro entero fraccionario con crecimiento aritmético dentro de cada año, seguro temporal fraccionario con crecimiento aritmético dentro de cada año y seguro entero fraccionario con crecimiento geométrico cada año. Para ello se construyen tablas para un mismo plazo de cobertura (20 años) y mapas de calor sobre una grilla de edades y plazos; posteriormente se comparan los productos 2, 3 y 5 con el producto 1 (el base) a partir de sus diferencias de prima.
+
+## Tabla de resultados (mismo n)
+
+Los resultados para diferentes edades son los siguientes:
+
+```{r final table}
+premium_table_5 <- build_table_all_ages(
+  horizon_n = 20,
+  mortality_file = .mortality_file,
+  i = nominal_interest,
+  r = inflation,
+  m = m,
+  gender = gender
+)
+
+premium_table_5
+```
 
 ## Primas
 

@@ -1,5 +1,5 @@
 
-# draft for Taller_1.Rmd (the definite file)
+# draft for Taller_1.Rmd (the definite file). Test cases here.
 
 # prep
 rm(list = ls())
@@ -24,7 +24,8 @@ pacman::p_load(
   dplyr,
   parallel,
   pdftools,
-  plotly
+  plotly,
+  akima
 )
 
 # Parameters --------------------------------------------------------------
